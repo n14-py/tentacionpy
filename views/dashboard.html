@@ -1,0 +1,71 @@
+<%- include('partials/header.html') %>
+
+<div class="page-header">
+    <h1>Mi Panel de Control</h1>
+    <a href="/feed" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver al Feed</a>
+</div>
+
+<div class="dashboard-container">
+    <p>Aquí puedes ver un resumen de tu actividad y ganancias en TentacionPY.</p>
+    
+    <div class="dashboard-grid">
+        <div class="stat-card">
+            <h3>Balance Actual</h3>
+            <p>💰 <%= currentUser.tpysBalance.toFixed(0) %></p>
+        </div>
+        <div class="stat-card">
+            <h3>Ganancia Neta Total</h3>
+            <p>💸 <%= totalNetEarnings.toFixed(0) %></p>
+             <span style="color: var(--success-color); font-weight: bold;">
+                (Gs. <%= (totalNetEarnings * TPYS_TO_GS_RATE).toLocaleString('es-PY') %>)
+            </span>
+        </div>
+        <div class="stat-card">
+            <h3>Seguidores</h3>
+            <p>❤️ <%= currentUser.followers.length %></p>
+        </div>
+    </div>
+
+    <hr>
+
+    <h2>Estadísticas de Mis Videos</h2>
+    <div class="table-container">
+        <table class="dashboard-table">
+            <thead>
+                <tr>
+                    <th>Video</th>
+                    <th>Precio (TPYS)</th>
+                    <th>Ventas</th>
+                    <th>Ganancia Neta</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if(myVideos.length > 0) { %>
+                    <% myVideos.forEach(video => { %>
+                    <tr>
+                        <td><video src="<%= video.files[0] %>" muted></video></td>
+                        <td><%= video.price %></td>
+                        <td><%= video.salesCount %></td>
+                        <td><%= (video.price * video.salesCount * 0.55).toFixed(0) %> TPYS</td>
+                    </tr>
+                    <% }) %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="4" style="text-align: center;">Aún no tienes videos a la venta.</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+
+    <hr>
+    
+    <div style="text-align:center;">
+        <h2>¿Quieres retirar tus ganancias?</h2>
+        <p>Revisa las condiciones y el proceso para convertir tus TPYS en dinero real.</p>
+        <a href="/payout-info" class="btn btn-primary" style="margin-top: 1rem;">Información sobre Retiros</a>
+    </div>
+
+</div>
+
+<%- include('partials/footer.html') %>

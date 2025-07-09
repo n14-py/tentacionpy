@@ -1,0 +1,33 @@
+<%- include('partials/header.html') %>
+
+<div class="page-header">
+    <h1>Mis Videos Comprados</h1>
+    <a href="/feed" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver al Feed</a>
+</div>
+
+<p>Aquí encontrarás todos los videos que has desbloqueado.</p>
+
+<div class="post-grid">
+    <% if (videos.length > 0) { %>
+        <% videos.forEach(video => { %>
+            <div class="post-card">
+                <a href="/post/<%= video._id %>" class="post-image-link">
+                     <% if (video.files && video.files.length > 0) { %>
+                        <video src="<%= video.files[0] %>" class="post-image" muted preload="metadata"></video>
+                     <% } %>
+                </a>
+                <div class="post-content">
+                    <p><%= video.description %></p>
+                    <p style="color:var(--light-gray); font-size: 0.9rem;">De: <a href="/user/<%= video.userId._id %>"><%= video.userId.username %></a></p>
+                    <div style="margin-top: 1rem;">
+                       <a href="/post/<%= video._id %>" class="btn btn-primary" style="width:100%">Ver Video</a>
+                    </div>
+                </div>
+            </div>
+        <% }) %>
+    <% } else { %>
+        <p>Aún no has comprado ningún video. <a href="/feed">Explora el feed</a> para encontrar contenido.</p>
+    <% } %>
+</div>
+
+<%- include('partials/footer.html') %>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Compra Exitosa - MiRedSocial</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+  <header class="main-header">
+    <div class="header-container">
+      <h1 class="logo"><i class="fas fa-camera-retro"></i> MiRedSocial</h1>
+    </div>
+  </header>
+
+  <main class="purchase-container">
+    <div class="purchase-card">
+      <div class="purchase-header">
+        <div class="checkmark-circle">
+          <i class="fas fa-check"></i>
+        </div>
+        <h1>¡Compra Exitosa!</h1>
+      </div>
+
+      <div class="purchase-details">
+        <div class="purchase-item">
+          <h3><%= post.userId.username %></h3>
+          <p class="item-title"><%= post.description %></p>
+          <p class="item-price">$<%= post.price.toFixed(2) %></p>
+        </div>
+
+        <div class="purchase-info">
+          <div class="info-row">
+            <span class="info-label">Fecha:</span>
+            <span class="info-value"><%= formatDate(new Date()) %></span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">ID de transacción:</span>
+            <span class="info-value"><%= post._id.toString().slice(-8) %></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="purchase-actions">
+        <a href="/post/<%= post._id %>" class="button primary">
+          <i class="fas fa-play-circle"></i> Ver contenido
+        </a>
+        <% if (post.userId.whatsapp) { %>
+          <a href="https://wa.me/<%= post.userId.whatsapp %>?text=Hola%20<%= encodeURIComponent(post.userId.username) %>%20he%20comprado%20tu%20video%20'<%= encodeURIComponent(post.description) %>'%20(ID:%20<%= post._id.toString().slice(-8) %>)" 
+             target="_blank" 
+             class="button whatsapp-button">
+            <i class="fab fa-whatsapp"></i> Contactar al vendedor
+          </a>
+        <% } %>
+        <a href="/profile" class="button secondary">
+          <i class="fas fa-user"></i> Volver a mi perfil
+        </a>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

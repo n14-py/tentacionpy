@@ -1,0 +1,76 @@
+<%- include('partials/header.html') %>
+
+<div class="page-header">
+    <h1>Perfil de <%= user.username %></h1>
+    <a href="/feed" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver al Feed</a>
+</div>
+
+<div class="profile-header">
+    <img src="<%= user.profilePic %>" alt="Foto de perfil de <%= user.username %>">
+    <div class="profile-info">
+        <h2 style="font-size: 2.5rem; margin-bottom: 0.5rem;"><%= user.username %></h2>
+        <div class="profile-stats">
+            <span><strong><%= posts.length %></strong> posts</span>
+            <a href="/user/<%= user._id %>/followers"><strong><%= user.followers.length %></strong> seguidores</a>
+            <a href="/user/<%= user._id %>/following"><strong><%= user.following.length %></strong> siguiendo</a>
+        </div>
+        <p class="bio"><%= user.bio %></p>
+        <% if (currentUser && currentUser._id.toString() !== user._id.toString()) { %>
+            <form action="/user/<%= user._id %>/follow" method="POST" style="margin-top: 1rem;">
+                <button type="submit" class="btn <%= currentUser.following.includes(user._id) ? 'btn-secondary' : 'btn-primary' %> follow-button">
+                    <%= currentUser.following.includes(user._id) ? 'Dejar de Seguir' : 'Seguir' %>
+                </button>
+            </form>
+        <% } %>
+    </div>
+</div>
+
+<h2>Publicaciones de <%= user.username %></h2>
+<div class="post-grid">
+    <% if(posts.length > 0) { %>
+        <% posts.forEach(post => { %>
+            <% const isBoosted = post.boostedUntil && new Date(post.boostedUntil) > new Date(); %>
+            <div class="post-card <%= isBoosted ? 'post-card--boosted' : '' %>" style="--boost-color: <%= post.boostOptions.color %>">
+                <% if(isBoosted) { %><div class="boost-badge"><%= post.boostOptions.emoji %> Viral</div><% } %>
+                 <% if(post.files.length > 1) { %>
+                    <div class="multi-photo-badge"><i class="fas fa-images"></i> <%= post.files.length %></div>
+                <% } %>
+
+                <% if (post.type === 'video') { %>
+                    <div style="position: relative;">
+                         <% if (post.files && post.files.length > 0) { %>
+                            <video src="<%= post.files[0] %>" class="post-image" muted preload="metadata"></video>
+                         <% } %>
+                        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; flex-direction: column; text-align: center; padding: 1rem;">
+                           <p style="color: white; font-size: 1.5rem;">Video Exclusivo</p>
+                            <button type="button" class="btn btn-primary confirm-action-btn"
+                                data-message="¿Confirmas la compra de este video por <%= post.price %> TPYS?"
+                                data-action="/buy-video/<%= post._id %>">
+                                Comprar por <%= post.price %> TPYS
+                            </button>
+                        </div>
+                    </div>
+                <% } else { %>
+                     <a href="/anuncio/<%= post._id %>">
+                        <% if (post.files && post.files.length > 0) { %>
+                            <img src="<%= post.files[0] %>" alt="Anuncio" class="post-image">
+                        <% } %>
+                    </a>
+                <% } %>
+                <div class="post-content">
+                    <p><%= post.description.substring(0, 100) %>...</p>
+                    <div class="post-actions">
+                        <button class="like-button <%= post.likes.includes(currentUser?._id) ? 'liked' : '' %>" data-post-id="<%= post._id %>">
+                            <i class="fa-heart <%= post.likes.includes(currentUser?._id) ? 'fas' : 'far' %>"></i> 
+                            <span class="like-count"><%= post.likes.length %></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        <% }) %>
+    <% } else { %>
+         <p><%= user.username %> aún no ha publicado nada.</p>
+    <% } %>
+</div>
+
+<%- include('partials/footer.html') %>

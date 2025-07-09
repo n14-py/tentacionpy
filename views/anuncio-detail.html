@@ -1,0 +1,130 @@
+<%- include('partials/header.html') %>
+
+<div class="page-header">
+    <h1>Detalles del Anuncio</h1>
+    <a href="/feed" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver al Feed</a>
+</div>
+
+<div class="anuncio-detail-container">
+    <div class="photo-gallery">
+        <div class="main-photo-container">
+            <% if (post.files && post.files.length > 0) { %>
+                <img src="<%= post.files[0] %>" alt="<%= post.description %>" id="main-photo">
+            <% } %>
+        </div>
+        <% if (post.files && post.files.length > 1) { %>
+        <div class="thumbnails-container">
+            <% post.files.forEach((file, index) => { %>
+                <img src="<%= file %>" alt="Thumbnail <%= index + 1 %>" class="thumbnail <%= index === 0 ? 'active' : '' %>">
+            <% }) %>
+        </div>
+        <% } %>
+    </div>
+    <div class="anuncio-info">
+        <div class="anuncion-info user-link-container" style="background: var(--primary-color); padding: 1rem; border-radius: var(--border-radius-soft); margin-bottom: 2rem;">
+             <a href="/user/<%= post.userId._id %>" class="user-link">
+                <img src="<%= post.userId.profilePic %>" alt="<%= post.userId.username %>">
+                <h2><%= post.userId.username %></h2>
+            </a>
+            <p style="margin-bottom: 1rem;"><%= post.userId.bio.substring(0, 100) %>...</p>
+            <% if (currentUser && currentUser._id.toString() !== post.userId._id.toString()) { %>
+            <form action="/user/<%= post.userId._id %>/follow" method="POST">
+                <button type="submit" class="btn <%= currentUser.following.includes(post.userId._id) ? 'btn-secondary' : 'btn-primary' %>" style="width: 100%;">
+                    <%= currentUser.following.includes(post.userId._id) ? 'Dejar de Seguir' : 'Seguir' %>
+                </button>
+            </form>
+            <% } %>
+        </div>
+        
+        <div class="post-actions" style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
+            <button class="like-button <%= post.likes.includes(currentUser?._id) ? 'liked' : '' %>" data-post-id="<%= post._id %>">
+                <i class="fa-heart <%= post.likes.includes(currentUser?._id) ? 'fas' : 'far' %>"></i> 
+                <span class="like-count"><%= post.likes.length %></span>
+            </button>
+             <% if(currentUser && post.userId._id.equals(currentUser._id)) { %>
+                <a href="/post/<%= post._id %>/edit" class="btn btn-secondary"><i class="fas fa-edit"></i></a>
+                <button type="button" class="btn btn-danger confirm-action-btn" 
+                    data-message="¿Estás seguro de que quieres borrar esta publicación? Esta acción es permanente." 
+                    data-action="/post/<%= post._id %>/delete">
+                    <i class="fas fa-trash"></i>
+                </button>
+            <% } %>
+        </div>
+
+        <div class="info-section">
+            <h3>Descripción</h3>
+            <p><%= post.description %></p>
+        </div>
+        
+        <% if(post.services && post.services.length > 0 && post.services[0] !== '') { %>
+        <div class="info-section">
+            <h3>Servicios Incluidos</h3>
+            <ul class="services-list">
+                <% post.services.forEach(service => { %>
+                    <li><%= service %></li>
+                <% }) %>
+            </ul>
+        </div>
+        <% } %>
+
+        <% if(post.rate) { %>
+        <div class="info-section">
+            <h3>Tarifa</h3>
+            <div class="rate-box">
+                <%= post.rate %>
+            </div>
+        </div>
+        <% } %>
+
+        <% const contactNumber = post.whatsapp || post.userId.whatsapp; %>
+        <% if(contactNumber) { %>
+        <div class="whatsapp-button-container">
+            <a href="https://wa.me/<%= contactNumber.replace(/\D/g, '') %>" target="_blank" class="btn btn-whatsapp" style="width: 100%;">
+                <i class="fab fa-whatsapp"></i> Contactar por WhatsApp
+            </a>
+        </div>
+        <% } %>
+        
+        <hr>
+
+        <% if (currentUser && post.userId._id.toString() === currentUser._id.toString()) { %>
+        <div class="info-section">
+            <h3>✨ ¡Hazlo Viral!</h3>
+            <p>Impulsa este anuncio para que aparezca primero y obtenga más visitas.</p>
+            <% if(post.boostedUntil && new Date(post.boostedUntil) > new Date()) { %>
+                <div class="success-message">¡Este post está impulsado hasta <%= formatDate(post.boostedUntil) %>!</div>
+            <% } %>
+            <form action="/post/<%= post._id %>/boost" method="POST">
+                <div class="boost-form-options">
+                    <div class="form-group">
+                        <label>Color de Fondo</label>
+                        <div class="color-options">
+                            <input type="radio" id="color-fire" name="color" value="linear-gradient(140deg, #53122c, #240b19)" checked><label for="color-fire" style="background: linear-gradient(140deg, #e4007c, #ff4f8b);"></label>
+                            <input type="radio" id="color-gold" name="color" value="linear-gradient(140deg, #4d3f18, #221c0b)"><label for="color-gold" style="background: linear-gradient(140deg, #ffc400, #ffdb5d);"></label>
+                            <input type="radio" id="color-premium" name="color" value="linear-gradient(140deg, #2c1a4d, #110b22)"><label for="color-premium" style="background: linear-gradient(140deg, #8A2BE2, #4B0082);"></label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Emoji del Badge</label>
+                        <div class="emoji-options">
+                             <input type="radio" id="emoji-fire" name="emoji" value="🔥" checked><label for="emoji-fire">🔥</label>
+                             <input type="radio" id="emoji-star" name="emoji" value="⭐"><label for="emoji-star">⭐</label>
+                             <input type="radio" id="emoji-diamond" name="emoji" value="💎"><label for="emoji-diamond">💎</label>
+                        </div>
+                    </div>
+                </div>
+                 <div class="form-group" style="margin-top: 1rem;">
+                    <label for="duration">Duración del Impulso</label>
+                     <select name="duration" id="duration" required>
+                        <option value="1">1 Día (80 TPYS)</option>
+                        <option value="10">10 Días (500 TPYS)</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Impulsar</button>
+            </form>
+        </div>
+        <% } %>
+    </div>
+</div>
+
+<%- include('partials/footer.html') %>

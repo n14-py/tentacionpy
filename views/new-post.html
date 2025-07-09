@@ -1,0 +1,51 @@
+<%- include('partials/header.html') %>
+
+<div class="page-header">
+    <h1>Crear Nueva Publicación</h1>
+    <a href="/profile" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver a mi Perfil</a>
+</div>
+
+<div class="form-container">
+    <form action="/new-post" method="POST" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="type">Tipo de Publicación</label>
+            <select id="type" name="type" required>
+                <option value="image">Anuncio (Fotos Gratis)</option>
+                <option value="video">Video en Venta</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="files">Archivos (puedes seleccionar varias fotos para un anuncio)</label>
+            <input type="file" id="files" name="files" accept="image/*,video/*" required multiple>
+        </div>
+        <div class="form-group">
+            <label for="description">Descripción</label>
+            <textarea id="description" name="description" required placeholder="Describe tu publicación..."></textarea>
+        </div>
+        <div class="form-group">
+            <label for="whatsapp">WhatsApp de Contacto (opcional)</label>
+            <input type="text" id="whatsapp" name="whatsapp" placeholder="Se usará el de tu perfil si lo dejas vacío">
+        </div>
+
+        <div id="image-fields" style="display: none;">
+            <div class="form-group">
+                <label for="services">Servicios (separados por coma)</label>
+                <input type="text" id="services" name="services" placeholder="Ej: Show, Acompañante, Masajes">
+            </div>
+            <div class="form-group">
+                <label for="rate">Tarifa</label>
+                <input type="text" id="rate" name="rate" placeholder="Ej: 500.000 Gs. / hora">
+            </div>
+        </div>
+        <div id="video-fields" style="display: none;">
+            <div class="form-group">
+                <label for="price">Precio en TPYS</label>
+                <input type="number" id="price" name="price" value="0" min="0">
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Publicar</button>
+    </form>
+</div>
+
+<%- include('partials/footer.html') %>

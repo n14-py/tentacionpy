@@ -1,0 +1,58 @@
+<%- include('partials/header.html') %>
+
+<div class="page-header">
+    <h1>Ajustes de la Cuenta</h1>
+    <a href="/profile" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver a mi Perfil</a>
+</div>
+
+<div class="form-container">
+    <h2>Editar Perfil</h2>
+    <p>Puedes cambiar tu nombre, bio, foto y más desde la página de tu perfil.</p>
+    <a href="/edit-profile" class="btn btn-primary">Ir a Editar Perfil</a>
+    <hr>
+    <h2>Zona de Peligro</h2>
+    <p>Borrar tu cuenta es una acción permanente. Todo tu contenido, tus TPYS y tus datos serán eliminados para siempre.</p>
+    
+    <% if (error) { %><div class="error-message"><%= error %></div><% } %>
+    <% if (success) { %><div class="success-message"><%= success %></div><% } %>
+
+    <form id="delete-account-form" method="POST" action="/settings/delete-account">
+        <div class="form-group">
+            <label for="password">Para confirmar, introduce tu contraseña</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        <button type="button" class="btn btn-danger confirm-action-btn" 
+            data-message="¿Estás completamente seguro? Se borrará tu perfil, posts y TPYS permanentemente. Esta acción no se puede deshacer."
+            data-form-id="delete-account-form" style="width: 100%;">
+            Borrar mi cuenta para siempre
+        </button>
+    </form>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const confirmationModal = document.getElementById('confirmation-modal');
+        const confirmBtn = confirmationModal.querySelector('.btn-danger');
+
+        document.body.addEventListener('click', function(e) {
+            let targetButton = e.target.closest('.confirm-action-btn');
+            if (targetButton && targetButton.dataset.formId) {
+                e.preventDefault();
+                const formId = targetButton.dataset.formId;
+                const formToSubmit = document.getElementById(formId);
+                
+                // Sobrescribir el listener del botón de confirmación del modal
+                const confirmSubmitBtn = confirmForm.querySelector('button[type="submit"]');
+                const newConfirmBtn = confirmSubmitBtn.cloneNode(true);
+                confirmSubmitBtn.parentNode.replaceChild(newConfirmBtn, confirmSubmitBtn);
+                
+                newConfirmBtn.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    if(formToSubmit) formToSubmit.submit();
+                });
+            }
+        });
+    });
+</script>
+
+<%- include('partials/footer.html') %>

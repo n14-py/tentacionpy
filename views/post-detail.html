@@ -1,0 +1,20 @@
+<%- include('partials/header.html') %>
+
+<div class="page-header">
+    <h1>Video Exclusivo</h1>
+    <a href="/my-videos" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver a Mis Videos</a>
+</div>
+
+<div class="anuncio-detail-container" style="grid-template-columns: 1fr;">
+    <div class="anuncio-info">
+         <h2><%= post.description %></h2>
+         <p>Video de <a href="/user/<%= post.userId._id %>"><%= post.userId.username %></a></p>
+    </div>
+    <div class="anuncio-image">
+        <% if (post.files && post.files.length > 0) { %>
+            <video src="<%= post.files[0] %>" controls autoplay style="width: 100%; border-radius: var(--border-radius-soft);"></video>
+        <% } %>
+    </div>
+</div>
+
+<%- include('partials/footer.html') %>

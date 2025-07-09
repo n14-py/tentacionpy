@@ -1,0 +1,40 @@
+</main>
+
+<% if (locals.currentUser) { %>
+<div class="fab-container">
+    <a href="/new-post" class="btn btn-primary fab" title="Crear Nuevo Post">
+        <i class="fas fa-plus"></i>
+    </a>
+</div>
+<% } %>
+
+<% if (!locals.currentUser) { %>
+<div id="age-verification-modal" class="age-verification-modal">
+    <div class="modal-content">
+        <h2>¿Eres mayor de 18 años?</h2>
+        <p>Debes ser mayor de edad para ingresar y ver el contenido de TentacionPY.</p>
+        <div class="modal-buttons">
+            <button id="age-no" class="btn btn-secondary">No, salir</button>
+            <button id="age-yes" class="btn btn-primary">Sí, tengo 18 o más</button>
+        </div>
+    </div>
+</div>
+<% } %>
+
+<div id="confirmation-modal" class="age-verification-modal">
+     <div class="modal-content">
+        <h2 id="confirmation-title">¿Estás seguro?</h2>
+        <p id="confirmation-message">Esta acción no se puede deshacer.</p>
+        <div class="modal-buttons">
+            <button id="cancel-btn" class="btn btn-secondary">Cancelar</button>
+            <form id="confirm-form" method="POST" style="display: contents;">
+                 <button type="submit" class="btn btn-danger">Confirmar</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="/js/main.js"></script>
+
+</body>
+</html>

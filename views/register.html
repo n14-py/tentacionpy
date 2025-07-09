@@ -1,0 +1,61 @@
+<%- include('partials/header.html') %>
+
+<div class="form-container">
+    <h1>Crea tu Cuenta en TentacionPY</h1>
+    <p>Únete a la comunidad y recibe 100 TPYS de regalo.</p>
+    <% if (error) { %>
+        <div class="error-message"><%= error %></div>
+    <% } %>
+
+    <a href="/auth/google" class="btn btn-secondary" style="width: 100%; background-color: #4285F4; color: white; border: none;">
+        <i class="fab fa-google"></i> Registrarse con Google
+    </a>
+    
+    <div style="text-align: center; margin: 1rem 0; color: var(--light-gray);">O regístrate con tu email</div>
+
+    <form action="/register" method="POST">
+        <div class="form-group">
+            <label for="username">Nombre de Usuario</label>
+            <input type="text" id="username" name="username" required>
+        </div>
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required>
+        </div>
+        <div class="form-group">
+            <label for="password">Contraseña</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        <div class="form-group">
+            <label for="location">Tu ubicación principal</label>
+            <select id="location" name="location" required>
+                <% CITIES.forEach(city => { %>
+                    <option value="<%= city %>"><%= city %></option>
+                <% }) %>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="gender">Yo soy</label>
+            <select id="gender" name="gender" required>
+                <option value="Mujer">Mujer</option>
+                <option value="Hombre">Hombre</option>
+                <option value="Trans">Trans</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="orientation">Mi orientación es</label>
+            <select id="orientation" name="orientation" required>
+                <option value="Heterosexual">Heterosexual</option>
+                <option value="Homosexual">Homosexual</option>
+                <option value="Bisexual">Bisexual</option>
+            </select>
+        </div>
+        <div class="form-group form-group-checkbox">
+            <input type="checkbox" id="ageCheck" name="ageCheck" required>
+            <label for="ageCheck">Confirmo que tengo más de 18 años y acepto los <a href="/terms" target="_blank">Términos y Condiciones</a>.</label>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Registrarme</button>
+    </form>
+</div>
+
+<%- include('partials/footer.html') %>

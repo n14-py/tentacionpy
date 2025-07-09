@@ -1,0 +1,77 @@
+<%- include('partials/header.html') %>
+
+<div class="search-container">
+    <h2>Encuentra tu Tentación</h2>
+    <form action="/feed" method="GET" class="search-form">
+        <div class="form-group">
+            <label for="q">Palabra Clave</label>
+            <input type="text" id="q" name="q" placeholder="Ej: servicio, nombre..." value="<%= query.q || '' %>">
+        </div>
+        <div class="form-group">
+            <label for="location">Ciudad / Departamento</label>
+            <select id="location" name="location">
+                <option value="">Todas</option>
+                <% CITIES.forEach(city => { %>
+                    <option value="<%= city %>" <%= query.location === city ? 'selected' : '' %>><%= city %></option>
+                <% }) %>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="gender">Género</label>
+            <select id="gender" name="gender">
+                <option value="">Todos</option>
+                <option value="Mujer" <%= query.gender === 'Mujer' ? 'selected' : '' %>>Mujer</option>
+                <option value="Hombre" <%= query.gender === 'Hombre' ? 'selected' : '' %>>Hombre</option>
+                <option value="Trans" <%= query.gender === 'Trans' ? 'selected' : '' %>>Trans</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Buscar</button>
+    </form>
+</div>
+
+<div class="post-grid">
+    <% if(posts.length > 0) { %>
+        <% posts.forEach(post => { %>
+            <% const isBoosted = post.boostedUntil && new Date(post.boostedUntil) > new Date(); %>
+            <div class="post-card <%= isBoosted ? 'post-card--boosted' : '' %>" style="--boost-color: <%= post.boostOptions.color %>">
+                <% if(isBoosted) { %><div class="boost-badge"><%= post.boostOptions.emoji %> Viral</div><% } %>
+                <% if(post.files.length > 1) { %>
+                    <div class="multi-photo-badge"><i class="fas fa-images"></i> <%= post.files.length %></div>
+                <% } %>
+                <a href="/anuncio/<%= post._id %>" class="post-image-link">
+                    <% if (post.files && post.files.length > 0) { %>
+                        <img src="<%= post.files[0] %>" alt="Anuncio" class="post-image">
+                    <% } %>
+                </a>
+                <div class="post-content">
+                    <div class="post-header">
+                        <a href="/user/<%= post.userId._id %>">
+                            <img src="<%= post.userId.profilePic %>" alt="Foto de perfil">
+                        </a>
+                        <div>
+                             <a href="/user/<%= post.userId._id %>" class="username-link"><%= post.userId.username %></a>
+                             <div class="user-tags"><%= post.userId.location %></div>
+                        </div>
+                    </div>
+                     <div class="post-actions">
+                        <% if (currentUser) { %>
+                        <button class="like-button <%= post.likes.includes(currentUser._id) ? 'liked' : '' %>" data-post-id="<%= post._id %>">
+                            <i class="fa-heart <%= post.likes.includes(currentUser._id) ? 'fas' : 'far' %>"></i> 
+                            <span class="like-count"><%= post.likes.length %></span>
+                        </button>
+                        <% } else { %>
+                            <span class="like-button" style="cursor: default;">
+                                <i class="far fa-heart"></i>
+                                <span class="like-count"><%= post.likes.length %></span>
+                            </span>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        <% }) %>
+    <% } else { %>
+        <h3 style="grid-column: 1 / -1; text-align: center; color: var(--light-gray); margin-top: 3rem;">No se encontraron resultados. Intenta con otros filtros.</h3>
+    <% } %>
+</div>
+
+<%- include('partials/footer.html') %>
