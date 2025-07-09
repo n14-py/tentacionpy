@@ -1,58 +1,63 @@
 <%- include('partials/header.html') %>
 
 <div class="page-header">
-    <h1>Ajustes de la Cuenta</h1>
+    <h1>Configuración de la Cuenta</h1>
     <a href="/profile" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver a mi Perfil</a>
 </div>
 
 <div class="form-container">
-    <h2>Editar Perfil</h2>
-    <p>Puedes cambiar tu nombre, bio, foto y más desde la página de tu perfil.</p>
-    <a href="/edit-profile" class="btn btn-primary">Ir a Editar Perfil</a>
-    <hr>
-    <h2>Zona de Peligro</h2>
-    <p>Borrar tu cuenta es una acción permanente. Todo tu contenido, tus TPYS y tus datos serán eliminados para siempre.</p>
+    <h2>Eliminar Cuenta</h2>
+    <p>Esta acción es <strong>permanente</strong> y no se puede deshacer. Se borrarán todos tus datos, publicaciones, y comentarios. Si estás seguro, introduce tu contraseña y haz clic en el botón.</p>
     
-    <% if (error) { %><div class="error-message"><%= error %></div><% } %>
-    <% if (success) { %><div class="success-message"><%= success %></div><% } %>
-
-    <form id="delete-account-form" method="POST" action="/settings/delete-account">
+    <% if (error) { %>
+        <div class="error-message"><%= error %></div>
+    <% } %>
+     <% if (success) { %>
+        <div class="success-message"><%= success %></div>
+    <% } %>
+    
+    <form id="delete-account-form" action="/settings/delete-account" method="POST">
         <div class="form-group">
-            <label for="password">Para confirmar, introduce tu contraseña</label>
+            <label for="password">Introduce tu contraseña para confirmar</label>
             <input type="password" id="password" name="password" required>
         </div>
-        <button type="button" class="btn btn-danger confirm-action-btn" 
-            data-message="¿Estás completamente seguro? Se borrará tu perfil, posts y TPYS permanentemente. Esta acción no se puede deshacer."
-            data-form-id="delete-account-form" style="width: 100%;">
-            Borrar mi cuenta para siempre
-        </button>
+        <button type="button" id="delete-account-btn" class="btn btn-danger" style="width: 100%;">Eliminar mi cuenta permanentemente</button>
     </form>
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const confirmationModal = document.getElementById('confirmation-modal');
-        const confirmBtn = confirmationModal.querySelector('.btn-danger');
+document.addEventListener('DOMContentLoaded', () => {
+    const deleteBtn = document.getElementById('delete-account-btn');
+    const deleteForm = document.getElementById('delete-account-form');
+    
+    if(deleteBtn) {
+        deleteBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            const modal = document.getElementById('confirmation-modal');
+            const confirmForm = document.getElementById('confirm-form');
+            const cancelBtn = document.getElementById('cancel-btn');
+            const modalTitle = document.getElementById('confirmation-title');
+            const modalMessage = document.getElementById('confirmation-message');
 
-        document.body.addEventListener('click', function(e) {
-            let targetButton = e.target.closest('.confirm-action-btn');
-            if (targetButton && targetButton.dataset.formId) {
-                e.preventDefault();
-                const formId = targetButton.dataset.formId;
-                const formToSubmit = document.getElementById(formId);
-                
-                // Sobrescribir el listener del botón de confirmación del modal
-                const confirmSubmitBtn = confirmForm.querySelector('button[type="submit"]');
-                const newConfirmBtn = confirmSubmitBtn.cloneNode(true);
-                confirmSubmitBtn.parentNode.replaceChild(newConfirmBtn, confirmSubmitBtn);
-                
-                newConfirmBtn.addEventListener('click', (event) => {
-                    event.preventDefault();
-                    if(formToSubmit) formToSubmit.submit();
-                });
-            }
+            // Configurar el modal para la acción de borrar cuenta
+            modalTitle.textContent = '¿Estás absolutamente seguro?';
+            modalMessage.textContent = 'Esta acción eliminará tu cuenta, publicaciones y datos para siempre. No se puede deshacer.';
+            
+            // Re-adjuntar el formulario original al modal para que se envíe
+            confirmForm.parentNode.replaceChild(deleteForm, confirmForm);
+            deleteForm.id = 'confirm-form'; // Renombrar para que el botón de cancelar funcione
+
+            modal.style.display = 'flex';
+
+            cancelBtn.onclick = () => {
+                modal.style.display = 'none';
+                 // Restaurar el DOM a su estado original para evitar problemas
+                location.reload(); 
+            };
         });
-    });
+    }
+});
 </script>
 
 <%- include('partials/footer.html') %>

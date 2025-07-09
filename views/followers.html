@@ -1,8 +1,8 @@
 <%- include('partials/header.html') %>
 
 <div class="page-header">
-     <h1><%= title %> de <%= user.username %></h1>
-    <a href="/user/<%= user._id %>" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver al Perfil</a>
+    <h1><%= title %> de <%= user.username %></h1>
+    <a href="/user/<%= user._id %>" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver al perfil</a>
 </div>
 
 <div class="follow-list-container">
@@ -12,11 +12,11 @@
                 <li class="follow-item">
                     <a href="/user/<%= item._id %>" class="follow-user-info">
                         <img src="<%= item.profilePic %>" alt="<%= item.username %>">
-                        <span class="username-link"><%= item.username %></span>
+                        <span><%= item.username %></span>
                     </a>
                     <% if (currentUser && currentUser._id.toString() !== item._id.toString()) { %>
                         <form action="/user/<%= item._id %>/follow" method="POST">
-                             <button type="submit" class="btn <%= currentUser.following.includes(item._id) ? 'btn-secondary' : 'btn-primary' %>">
+                            <button type="submit" class="btn follow-button <%= currentUser.following.includes(item._id) ? 'btn-secondary' : 'btn-primary' %>">
                                 <%= currentUser.following.includes(item._id) ? 'Dejar de Seguir' : 'Seguir' %>
                             </button>
                         </form>
@@ -25,8 +25,9 @@
             <% }) %>
         </ul>
     <% } else { %>
-        <p>No hay nadie en esta lista todavía.</p>
+        <p style="text-align: center; color: var(--light-gray);">No hay nadie en esta lista todavía.</p>
     <% } %>
 </div>
+
 
 <%- include('partials/footer.html') %>

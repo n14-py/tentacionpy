@@ -3,63 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TentacionPY</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <title>TentacionPY - Clasificados para Adultos en Paraguay</title>
     <link rel="stylesheet" href="/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
 </head>
 <body>
 
 <header>
-    <a href="/feed" class="logo">TentacionPY</a>
-    
-    <nav>
-        <% if (locals.currentUser) { %>
+    <a href="/" class="logo">TentacionPY</a>
+    <nav class="desktop-nav">
+         <% if (locals.currentUser) { %>
             <div class="user-menu-container">
                 <button id="user-menu-button">
                     <img src="<%= currentUser.profilePic %>" alt="Mi Perfil">
                     <i class="fas fa-chevron-down"></i>
                 </button>
-                <div class="user-menu" id="user-menu">
+                <div id="user-menu" class="user-menu">
                     <div class="user-menu-header">
-                        <div>Hola, <strong><%= currentUser.username %></strong></div>
-                        <div class="tpys-balance">💰 <%= currentUser.tpysBalance.toFixed(0) %> TPYS</div>
+                        Hola, <strong><%= currentUser.username %></strong>
+                        <div class="tpys-balance" title="Tu saldo de TPYS"><%= currentUser.tpysBalance.toFixed(0) %> TPYS</div>
                     </div>
                     <a href="/profile"><i class="fas fa-user-circle"></i> Mi Perfil</a>
-                    <a href="/dashboard"><i class="fas fa-tachometer-alt"></i> Mi Panel</a>
-                    <a href="/my-videos"><i class="fas fa-play-circle"></i> Videos Comprados</a>
-                    <a href="/add-funds"><i class="fas fa-plus-circle"></i> Añadir Fondos</a>
-                    <a href="/settings"><i class="fas fa-cog"></i> Ajustes</a>
-                    <a href="/logout" class="logout-link"><i class="fas fa-sign-out-alt"></i> Salir</a>
+                    <a href="/dashboard"><i class="fas fa-chart-line"></i> Panel de Creador</a>
+                    <a href="/my-videos"><i class="fas fa-play-circle"></i> Mis Videos Comprados</a>
+                    <a href="/add-funds"><i class="fas fa-wallet"></i> Añadir Fondos</a>
+                    <a href="/settings"><i class="fas fa-cog"></i> Configuración</a>
+                    <a href="/logout" class="logout-link"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
                 </div>
             </div>
         <% } else { %>
-            <div class="desktop-nav">
-                <a href="/login" class="btn btn-secondary">Login</a>
-                <a href="/register" class="btn btn-primary">Registro</a>
-            </div>
+            <a href="/login" class="btn btn-secondary">Iniciar Sesión</a>
+            <a href="/register" class="btn btn-primary">Crear Cuenta</a>
         <% } %>
-        <button id="menu-toggle" class="menu-toggle">
-            <span class="bar"></span>
-            <span class="bar"></span>
-            <span class="bar"></span>
-        </button>
     </nav>
 </header>
-
-<div id="mobile-menu" class="mobile-menu">
-    <% if (locals.currentUser) { %>
-        <a href="/profile">Mi Perfil</a>
-        <a href="/dashboard">Mi Panel</a>
-        <a href="/my-videos">Videos Comprados</a>
-        <a href="/add-funds">Añadir Fondos</a>
-        <a href="/settings">Ajustes</a>
-        <a href="/new-post">Nuevo Post</a>
-        <a href="/logout" class="logout-link">Salir</a>
-    <% } else { %>
-        <a href="/login">Login</a>
-        <a href="/register">Registro</a>
-    <% } %>
-</div>
 
 <main class="container">

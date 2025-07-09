@@ -1,20 +1,104 @@
 <%- include('partials/header.html') %>
 
 <div class="page-header">
-    <h1>Video Exclusivo</h1>
-    <a href="/my-videos" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver a Mis Videos</a>
+    <h1>Viendo Video</h1>
+    <a href="/my-videos" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Mis Videos</a>
 </div>
 
-<div class="anuncio-detail-container" style="grid-template-columns: 1fr;">
-    <div class="anuncio-info">
-         <h2><%= post.description %></h2>
-         <p>Video de <a href="/user/<%= post.userId._id %>"><%= post.userId.username %></a></p>
+<div class="anuncio-detail-container">
+    <div class="photo-gallery">
+        <div class="main-photo-container">
+            <video src="<%= post.files[0] %>" controls style="width: 100%; border-radius: var(--border-radius-soft);"></video>
+        </div>
     </div>
-    <div class="anuncio-image">
-        <% if (post.files && post.files.length > 0) { %>
-            <video src="<%= post.files[0] %>" controls autoplay style="width: 100%; border-radius: var(--border-radius-soft);"></video>
-        <% } %>
+    <div class="anuncio-info">
+        <div class="anuncion-info user-link-container">
+             <a href="/user/<%= post.userId._id %>" class="user-link">
+                <img src="<%= post.userId.profilePic %>" alt="<%= post.userId.username %>">
+                <h2><%= post.userId.username %></h2>
+            </a>
+        </div>
+
+        <div class="post-stats">
+            <span class="stat-item"><i class="fas fa-eye"></i> <%= post.views %> Vistas</span>
+            <span class="stat-item"><i class="fas fa-shopping-cart"></i> <%= post.salesCount %> Ventas</span>
+            <span class="stat-item"><i class="fas fa-comments"></i> <%= post.comments.length %> Comentarios</span>
+        </div>
+
+        <div class="info-section">
+            <h3>Descripción</h3>
+            <p><%= post.description %></p>
+        </div>
+        
+        <hr>
+
+        <div class="comments-section">
+            <h3>Comentarios</h3>
+            <form id="comment-form" class="comment-form">
+                <img src="<%= currentUser.profilePic %>" alt="Tu perfil">
+                <textarea name="text" placeholder="Añade un comentario..." required></textarea>
+                <button type="submit" class="btn btn-primary">Enviar</button>
+            </form>
+
+            <ul id="comment-list" class="comment-list">
+                 <% post.comments.slice().reverse().forEach(comment => { %>
+                    <li class="comment-item">
+                        <a href="/user/<%= comment.userId._id %>"><img src="<%= comment.userId.profilePic %>" alt="<%= comment.userId.username %>"></a>
+                        <div class="comment-content">
+                            <div class="comment-header">
+                                <a href="/user/<%= comment.userId._id %>" class="username"><%= comment.userId.username %></a>
+                                <span class="timestamp"><%= formatDate(comment.createdAt) %></span>
+                            </div>
+                            <p class="comment-text"><%= comment.text %></p>
+                        </div>
+                    </li>
+                <% }) %>
+            </ul>
+        </div>
     </div>
 </div>
+
+<script>
+ // La misma lógica de comentarios que en anuncio-detail.html
+ document.addEventListener('DOMContentLoaded', () => {
+    const commentForm = document.getElementById('comment-form');
+    if(commentForm) {
+        commentForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const text = this.querySelector('textarea').value;
+            if (!text.trim()) return;
+
+            fetch('/post/<%= post._id %>/comments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const commentList = document.getElementById('comment-list');
+                    const newComment = document.createElement('li');
+                    newComment.classList.add('comment-item');
+                    newComment.innerHTML = `
+                        <a href="/user/${data.comment.userId._id}"><img src="${data.comment.userId.profilePic}" alt="${data.comment.userId.username}"></a>
+                        <div class="comment-content">
+                            <div class="comment-header">
+                                <a href="/user/${data.comment.userId._id}" class="username">${data.comment.userId.username}</a>
+                                <span class="timestamp">Ahora</span>
+                            </div>
+                            <p class="comment-text">${data.comment.text}</p>
+                        </div>
+                    `;
+                    commentList.prepend(newComment);
+                    this.querySelector('textarea').value = '';
+                } else {
+                    alert(data.message);
+                }
+            });
+        });
+    }
+});
+</script>
+
 
 <%- include('partials/footer.html') %>

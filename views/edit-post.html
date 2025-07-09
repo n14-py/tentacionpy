@@ -11,6 +11,19 @@
             <label for="description">Descripción</label>
             <textarea id="description" name="description" required><%= post.description %></textarea>
         </div>
+        <div class="form-group">
+            <label for="category">Categoría</label>
+            <select id="category" name="category" required>
+                <% CATEGORIES.forEach(cat => { %>
+                    <option value="<%= cat %>" <%= post.category === cat ? 'selected' : '' %>><%= cat %></option>
+                <% }) %>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="tags">Tags (separados por coma)</label>
+            <input type="text" id="tags" name="tags" value="<%= post.tags.join(', ') %>">
+        </div>
+
 
         <% if(post.type === 'image') { %>
             <div class="form-group">
