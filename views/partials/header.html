@@ -28,7 +28,8 @@
                     </div>
                     <a href="/profile"><i class="fas fa-user-circle"></i> Mi Perfil</a>
                     <a href="/dashboard"><i class="fas fa-chart-line"></i> Panel de Creador</a>
-                    <a href="/my-videos"><i class="fas fa-play-circle"></i> Mis Videos Comprados</a>
+                    <a href="/my-videos"><i class="fas fa-play-circle"></i> Mis Videos</a>
+                    <a href="/my-likes"><i class="fas fa-heart"></i> Mis Likes</a>
                     <a href="/add-funds"><i class="fas fa-wallet"></i> Añadir Fondos</a>
                     <a href="/settings"><i class="fas fa-cog"></i> Configuración</a>
                     <a href="/logout" class="logout-link"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
@@ -39,6 +40,12 @@
             <a href="/register" class="btn btn-primary">Crear Cuenta</a>
         <% } %>
     </nav>
+    <div class="mobile-auth-links">
+        <% if (!locals.currentUser) { %>
+            <a href="/login" class="btn btn-secondary">Login</a>
+            <a href="/register" class="btn btn-primary">Registro</a>
+        <% } %>
+    </div>
 </header>
 
 <main class="container">

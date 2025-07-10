@@ -27,7 +27,7 @@ app.engine('html', ejs.renderFile);
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('✅ Conectado a MongoDB'))
   .catch(err => console.error('❌ Error de conexión a MongoDB:', err));
-  
+
 // =============================================
 // CONFIGURACIÓN DE CLOUDINARY
 // =============================================
@@ -40,7 +40,7 @@ cloudinary.config({
 if (process.env.CLOUDINARY_CLOUD_NAME) {
     console.log('✅ Cloudinary configurado correctamente.');
 } else {
-    console.warn('⚠️  Advertencia: Faltan las variables de entorno de Cloudinary. Las subidas de archivos fallarán.');
+    console.warn('⚠️ Advertencia: Faltan las variables de entorno de Cloudinary. Las subidas de archivos fallarán.');
 }
 
 const storage = new CloudinaryStorage({
@@ -66,6 +66,19 @@ const storage = new CloudinaryStorage({
                 x: 20,
                 y: 20
             }];
+        } else if (file.mimetype.startsWith('video/')) {
+            params.transformation = [
+                {
+                    overlay: {
+                        font_family: "Arial",
+                        font_size: 80,
+                        text: "tentacionpy.com"
+                    },
+                    color: "white",
+                    opacity: 50,
+                    gravity: "center"
+                }
+            ];
         }
         return params;
     }
@@ -78,7 +91,7 @@ const upload = multer({ storage: storage });
 // =============================================
 const CITIES = ['Asunción', 'Central', 'Ciudad del Este', 'Encarnación', 'Villarrica', 'Coronel Oviedo', 'Pedro Juan Caballero', 'Otra'];
 const CATEGORIES = ['Acompañante', 'Masajes', 'OnlyFans', 'Contenido Digital', 'Shows', 'Otro'];
-const TPYS_TO_GS_RATE = 100;
+const TPYS_TO_GS_RATE = 100; // 1 TPY = 100 Gs
 
 const commentSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -92,6 +105,7 @@ const userSchema = new mongoose.Schema({
   gender: { type: String, enum: ['Mujer', 'Hombre', 'Trans'], required: true },
   orientation: { type: String, enum: ['Heterosexual', 'Homosexual', 'Bisexual'], required: true },
   location: { type: String, enum: CITIES, default: 'Asunción' },
+  address: { type: String, default: '' },
   bio: { type: String, default: '' },
   whatsapp: { type: String, default: '' },
   profilePic: { type: String, default: '/img/default.png' },
@@ -100,6 +114,8 @@ const userSchema = new mongoose.Schema({
   purchasedVideos: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post' }],
   followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  likedPosts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post' }],
+  isAdmin: { type: Boolean, default: false },
 }, { timestamps: true });
 
 const postSchema = new mongoose.Schema({
@@ -133,9 +149,27 @@ const transactionSchema = new mongoose.Schema({
     netEarning: { type: Number, required: true },
 }, { timestamps: true });
 
+const withdrawalSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    amount: { type: Number, required: true },
+    method: { type: String, enum: ['transferencia', 'giro'], required: true },
+    details: {
+        fullName: String,
+        ci: String,
+        bankName: String,
+        accountNumber: String,
+        accountType: String,
+        phone: String,
+        alias: String
+    },
+    status: { type: String, enum: ['pendiente', 'completado', 'rechazado'], default: 'pendiente' },
+}, { timestamps: true });
+
 const User = mongoose.model('User', userSchema);
 const Post = mongoose.model('Post', postSchema);
 const Transaction = mongoose.model('Transaction', transactionSchema);
+const Withdrawal = mongoose.model('Withdrawal', withdrawalSchema);
+
 
 // =============================================
 // MIDDLEWARES
@@ -152,6 +186,12 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use(express.static(path.join(__dirname, 'public')));
 const requireAuth = (req, res, next) => { if (!req.session.userId) return res.redirect('/login'); next(); };
+const requireAdmin = async (req, res, next) => {
+    if (!req.session.userId) return res.redirect('/login');
+    const user = await User.findById(req.session.userId);
+    if (!user.isAdmin) return res.status(403).render('error', { message: "Acceso denegado. No eres administrador." });
+    next();
+};
 const redirectIfAuth = (req, res, next) => { if (req.session.userId) return res.redirect('/profile'); next(); };
 const isPostOwner = async (req, res, next) => {
     try {
@@ -217,32 +257,35 @@ passport.deserializeUser(async (id, done) => {
 // RUTAS
 // =============================================
 app.get('/', (req, res) => res.redirect('/feed'));
+
 app.get('/feed', async (req, res, next) => {
     try {
-        const { location, gender, q, category } = req.query;
-        let postFilter = { type: 'image' };
+        const { location, gender, q, category, contentType } = req.query;
+        let postFilter = {};
         let userFilter = {};
-        if (location && location !== "") userFilter.location = location;
-        if (gender && gender !== "") userFilter.gender = gender;
-        if (category && category !== "") postFilter.category = category;
+
+        if (location) userFilter.location = location;
+        if (gender) userFilter.gender = gender;
+        if (category) postFilter.category = category;
+        if (contentType) postFilter.type = contentType;
 
         const userIdsByProperties = await User.find(userFilter).select('_id');
         let finalFilter = { ...postFilter, userId: { $in: userIdsByProperties.map(u => u._id) } };
 
         if (q) {
             const regex = { $regex: q, $options: 'i' };
-            const userIdsByName = await User.find({ username: regex }).select('_id');
-            const userIdsCombined = [...new Set([...userIdsByProperties.map(u => u._id.toString()), ...userIdsByName.map(u => u._id.toString())])];
-            finalFilter = { 
-                type: 'image', 
-                $or: [ 
-                    { userId: { $in: userIdsCombined } }, 
-                    { description: regex }, 
-                    { services: regex },
-                    { tags: regex } 
-                ] 
-            };
+            const userIdsByName = await User.find({ $or: [{ username: regex }, { address: regex }] }).select('_id');
+
+            const orConditions = [
+                { userId: { $in: [...userIdsByProperties.map(u => u._id), ...userIdsByName.map(u => u._id)] } },
+                { description: regex },
+                { services: regex },
+                { tags: regex }
+            ];
+            
+            finalFilter.$or = orConditions;
         }
+
         const posts = await Post.find(finalFilter).populate('userId').sort({ boostedUntil: -1, createdAt: -1 });
         res.render('index', { posts, query: req.query });
     } catch (err) { next(err); }
@@ -279,20 +322,26 @@ app.post('/login', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 app.get('/logout', (req, res) => req.session.destroy(() => res.redirect('/')));
+
 app.get('/settings', requireAuth, (req, res) => res.render('settings', { error: null, success: null }));
 app.post('/settings/delete-account', requireAuth, async (req, res, next) => {
     try {
         const { password } = req.body;
         const user = await User.findById(req.session.userId);
         if(!user) return res.render('settings', { error: 'Usuario no encontrado.', success: null });
-        const passwordMatch = await bcrypt.compare(password, user.password);
-        if (!passwordMatch) return res.render('settings', { error: 'Contraseña incorrecta. No se ha podido borrar la cuenta.', success: null });
+        
+        if (user.password) { // Check if user has a password (not a Google login)
+             const passwordMatch = await bcrypt.compare(password, user.password);
+             if (!passwordMatch) return res.render('settings', { error: 'Contraseña incorrecta. No se ha podido borrar la cuenta.', success: null });
+        }
+
         await Post.deleteMany({ userId: user._id });
         await User.updateMany({ $or: [{ followers: user._id }, { following: user._id }] }, { $pull: { followers: user._id, following: user._id } });
         await User.findByIdAndDelete(user._id);
         req.session.destroy(() => res.redirect('/register'));
     } catch (err) { next(err); }
 });
+
 app.get('/profile', requireAuth, async (req, res, next) => {
  try{
     const user = await User.findById(req.session.userId);
@@ -300,7 +349,7 @@ app.get('/profile', requireAuth, async (req, res, next) => {
     res.render('profile', { user, posts });
  } catch(err) { next(err); }
 });
-app.get('/user/:id', requireAuth, async (req, res, next) => {
+app.get('/user/:id', async (req, res, next) => {
     try{
         const user = await User.findById(req.params.id);
         if (!user) return res.status(404).render('error', { message: 'Usuario no encontrado' });
@@ -311,13 +360,27 @@ app.get('/user/:id', requireAuth, async (req, res, next) => {
 app.get('/edit-profile', requireAuth, (req, res) => res.render('edit-profile'));
 app.post('/edit-profile', requireAuth, upload.single('profilePic'), async (req, res, next) => {
     try {
-        const { username, bio, location, whatsapp, gender, orientation } = req.body;
-        const updateData = { username, bio, location, whatsapp, gender, orientation };
+        const { username, bio, location, address, whatsapp, gender, orientation } = req.body;
+        const updateData = { username, bio, location, address, whatsapp, gender, orientation };
         if (req.file) { updateData.profilePic = req.file.path; }
         await User.findByIdAndUpdate(req.session.userId, updateData);
         res.redirect('/profile');
     } catch (err) { next(err); }
 });
+
+app.get('/my-likes', requireAuth, async (req, res) => {
+    const user = await User.findById(req.session.userId).populate({
+        path: 'likedPosts',
+        model: 'Post',
+        populate: {
+            path: 'userId',
+            model: 'User',
+            select: 'username profilePic'
+        }
+    });
+    res.render('my-likes', { posts: user.likedPosts });
+});
+
 app.get('/user/:id/followers', requireAuth, async (req, res) => {
     const user = await User.findById(req.params.id).populate('followers', 'username profilePic');
     res.render('followers', { title: 'Seguidores', user, list: user.followers });
@@ -438,7 +501,7 @@ app.post('/post/:id/comments', requireAuth, async (req, res) => {
         await post.save();
 
         const newComment = post.comments[post.comments.length - 1];
-        const populatedComment = await newComment.populate('userId', 'username profilePic');
+        const populatedComment = await Post.populate(newComment, {path: 'userId', select: 'username profilePic'});
 
         res.json({ success: true, comment: populatedComment });
 
@@ -452,13 +515,26 @@ app.post('/post/:id/comments', requireAuth, async (req, res) => {
 app.post('/post/:id/like', requireAuth, async (req, res) => {
     try {
         const post = await Post.findById(req.params.id);
-        const userId = req.session.userId;
+        const user = await User.findById(req.session.userId);
+        const userId = user._id;
+
         const index = post.likes.indexOf(userId);
-        if (index > -1) { post.likes.splice(index, 1); } else { post.likes.push(userId); }
+        const userLikedIndex = user.likedPosts.indexOf(post._id);
+
+        if (index > -1) { 
+            post.likes.splice(index, 1); 
+            if(userLikedIndex > -1) user.likedPosts.splice(userLikedIndex, 1);
+        } else { 
+            post.likes.push(userId); 
+            if(userLikedIndex === -1) user.likedPosts.push(post._id);
+        }
+        
         await post.save();
+        await user.save();
         res.json({ success: true, likes: post.likes.length, liked: index === -1 });
     } catch (err) { res.status(500).json({ success: false, message: "Error en el servidor" }); }
 });
+
 app.post('/post/:id/boost', requireAuth, isPostOwner, async (req, res, next) => {
     try {
         const { duration, color, emoji } = req.body;
@@ -478,6 +554,7 @@ app.post('/post/:id/boost', requireAuth, isPostOwner, async (req, res, next) => 
         res.redirect(`/anuncio/${req.params.id}`);
     } catch (err) { next(err); }
 });
+
 app.post('/buy-video/:id', requireAuth, async (req, res, next) => {
     const dbSession = await mongoose.startSession();
     dbSession.startTransaction();
@@ -510,13 +587,14 @@ app.post('/buy-video/:id', requireAuth, async (req, res, next) => {
         dbSession.endSession();
     }
 });
-app.get('/add-funds', requireAuth, (req, res) => res.render('add-funds', { success: null }));
+
+app.get('/add-funds', requireAuth, (req, res) => res.render('add-funds', { success: null, error: null }));
 app.post('/add-funds', requireAuth, async (req, res, next) => {
     try {
         const amount = parseInt(req.body.amount, 10);
         if (isNaN(amount) || amount <= 0) throw new Error('Cantidad inválida');
         await User.findByIdAndUpdate(req.session.userId, { $inc: { tpysBalance: amount } });
-        res.render('add-funds', { success: `¡Se han añadido ${amount} TPYS a tu cuenta!` });
+        res.render('add-funds', { success: `¡Se han añadido ${amount} TPYS a tu cuenta!`, error: null });
     } catch(err) { next(err); }
 });
 app.get('/my-videos', requireAuth, async (req, res) => {
@@ -531,6 +609,61 @@ app.get('/dashboard', requireAuth, async (req, res) => {
     res.render('dashboard', { totalNetEarnings, myVideos, TPYS_TO_GS_RATE });
 });
 app.get('/payout-info', requireAuth, (req, res) => res.render('payout-info'));
+
+app.get('/withdrawal', requireAuth, (req, res) => res.render('withdrawal', { error: null, success: null }));
+app.post('/withdrawal', requireAuth, async (req, res, next) => {
+    try {
+        const { amount, method, fullName, ci, bankName, accountNumber, accountType, phone, alias } = req.body;
+        const user = await User.findById(req.session.userId);
+        const amountNum = parseInt(amount);
+
+        if (user.tpysBalance < amountNum) {
+            return res.render('withdrawal', { error: "No tienes suficientes fondos para retirar.", success: null });
+        }
+
+        const newWithdrawal = new Withdrawal({
+            userId: user._id,
+            amount: amountNum,
+            method,
+            details: { fullName, ci, bankName, accountNumber, accountType, phone, alias },
+            status: 'pendiente'
+        });
+
+        await newWithdrawal.save();
+        user.tpysBalance -= amountNum;
+        await user.save();
+        
+        res.render('withdrawal', { success: "Tu solicitud de retiro ha sido enviada.", error: null });
+    } catch(err) {
+        next(err);
+    }
+});
+
+// =============================================
+// RUTAS DE ADMINISTRADOR
+// =============================================
+app.get('/admin/withdrawals', requireAdmin, async (req, res) => {
+    const withdrawals = await Withdrawal.find().populate('userId', 'username email').sort({ createdAt: -1 });
+    res.render('admin-withdrawals', { withdrawals });
+});
+
+app.post('/admin/withdrawal/:id/complete', requireAdmin, async (req, res) => {
+    await Withdrawal.findByIdAndUpdate(req.params.id, { status: 'completado' });
+    res.redirect('/admin/withdrawals');
+});
+
+app.post('/admin/withdrawal/:id/reject', requireAdmin, async (req, res, next) => {
+    try {
+        const withdrawal = await Withdrawal.findById(req.params.id);
+        const user = await User.findById(withdrawal.userId);
+        user.tpysBalance += withdrawal.amount;
+        await user.save();
+        await Withdrawal.findByIdAndUpdate(req.params.id, { status: 'rechazado' });
+        res.redirect('/admin/withdrawals');
+    } catch(err) {
+        next(err);
+    }
+});
 
 // =============================================
 // MANEJADOR DE ERRORES

@@ -1,63 +1,49 @@
 <%- include('partials/header.html') %>
 
 <div class="page-header">
-    <h1>Configuración de la Cuenta</h1>
-    <a href="/profile" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver a mi Perfil</a>
+    <h1>Configuración</h1>
 </div>
 
 <div class="form-container">
-    <h2>Eliminar Cuenta</h2>
-    <p>Esta acción es <strong>permanente</strong> y no se puede deshacer. Se borrarán todos tus datos, publicaciones, y comentarios. Si estás seguro, introduce tu contraseña y haz clic en el botón.</p>
+    <h2>Opciones de Cuenta</h2>
+    <div class="settings-links">
+        <a href="/edit-profile" class="settings-link"><i class="fas fa-user-edit"></i> Editar Perfil</a>
+        <a href="/add-funds" class="settings-link"><i class="fas fa-wallet"></i> Añadir Fondos (TPYS)</a>
+        <a href="/withdrawal" class="settings-link"><i class="fas fa-money-bill-wave"></i> Retirar Ganancias</a>
+        <a href="/my-likes" class="settings-link"><i class="fas fa-heart"></i> Ver Mis Likes</a>
+    </div>
+
+    <hr>
     
-    <% if (error) { %>
+    <h2>Información</h2>
+     <div class="settings-links">
+        <a href="/payout-info" class="settings-link"><i class="fas fa-info-circle"></i> ¿Cómo funcionan los pagos?</a>
+        <a href="/terms" class="settings-link"><i class="fas fa-file-contract"></i> Términos y Condiciones</a>
+    </div>
+
+    <hr>
+
+    <h2>Zona de Peligro</h2>
+     <% if (error) { %>
         <div class="error-message"><%= error %></div>
     <% } %>
      <% if (success) { %>
         <div class="success-message"><%= success %></div>
     <% } %>
+    <p>Esta acción es <strong>permanente</strong> y no se puede deshacer. Se borrarán todos tus datos, publicaciones, y comentarios.</p>
     
     <form id="delete-account-form" action="/settings/delete-account" method="POST">
         <div class="form-group">
-            <label for="password">Introduce tu contraseña para confirmar</label>
-            <input type="password" id="password" name="password" required>
+            <label for="password">Introduce tu contraseña para confirmar (si no usaste Google)</label>
+            <input type="password" id="password" name="password">
         </div>
-        <button type="button" id="delete-account-btn" class="btn btn-danger" style="width: 100%;">Eliminar mi cuenta permanentemente</button>
+        <button type="button" class="btn btn-danger confirm-action-btn" 
+            data-message="¿Estás seguro que quieres borrar tu cuenta para siempre?" 
+            data-form-id="delete-account-form"
+            style="width: 100%;">
+            Eliminar mi cuenta permanentemente
+        </button>
     </form>
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const deleteBtn = document.getElementById('delete-account-btn');
-    const deleteForm = document.getElementById('delete-account-form');
-    
-    if(deleteBtn) {
-        deleteBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            
-            const modal = document.getElementById('confirmation-modal');
-            const confirmForm = document.getElementById('confirm-form');
-            const cancelBtn = document.getElementById('cancel-btn');
-            const modalTitle = document.getElementById('confirmation-title');
-            const modalMessage = document.getElementById('confirmation-message');
-
-            // Configurar el modal para la acción de borrar cuenta
-            modalTitle.textContent = '¿Estás absolutamente seguro?';
-            modalMessage.textContent = 'Esta acción eliminará tu cuenta, publicaciones y datos para siempre. No se puede deshacer.';
-            
-            // Re-adjuntar el formulario original al modal para que se envíe
-            confirmForm.parentNode.replaceChild(deleteForm, confirmForm);
-            deleteForm.id = 'confirm-form'; // Renombrar para que el botón de cancelar funcione
-
-            modal.style.display = 'flex';
-
-            cancelBtn.onclick = () => {
-                modal.style.display = 'none';
-                 // Restaurar el DOM a su estado original para evitar problemas
-                location.reload(); 
-            };
-        });
-    }
-});
-</script>
 
 <%- include('partials/footer.html') %>

@@ -48,7 +48,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (formId) {
                     const formToSubmit = document.getElementById(formId);
                     confirmForm.action = formToSubmit.action;
-                    // Asegurarse de que el botón de confirmación envíe el formulario correcto
                     const confirmSubmitBtn = confirmForm.querySelector('button[type="submit"]');
                     confirmSubmitBtn.onclick = (event) => {
                          event.preventDefault();
@@ -56,8 +55,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     };
                 } else {
                     confirmForm.action = action;
-                    const confirmSubmitBtn = confirmForm.querySelector('button[type="submit"]');
-                    confirmSubmitBtn.onclick = null; // Quitar cualquier listener anterior
                 }
                 
                 confirmationModal.style.display = 'flex';
@@ -67,7 +64,6 @@ document.addEventListener('DOMContentLoaded', () => {
         cancelBtn.addEventListener('click', () => {
             confirmationModal.style.display = 'none';
         });
-         // Cierra el modal si se hace clic fuera del contenido
         confirmationModal.addEventListener('click', (e) => {
             if (e.target === confirmationModal) {
                 confirmationModal.style.display = 'none';
@@ -122,9 +118,39 @@ document.addEventListener('DOMContentLoaded', () => {
         thumbnails.forEach(thumb => {
             thumb.addEventListener('click', function() {
                 mainPhoto.src = this.src;
+                mainPhoto.parentElement.style.background = `url(${this.src}) center center / cover no-repeat`; // for smooth loading
                 thumbnails.forEach(t => t.classList.remove('active'));
                 this.classList.add('active');
             });
+        });
+    }
+    
+    // --- FILTROS DE BÚSQUEDA MÓVIL ---
+    const toggleButton = document.querySelector('.search-filters-toggle');
+    const filtersDiv = document.querySelector('.search-filters');
+    if(toggleButton && filtersDiv){
+        toggleButton.addEventListener('click', () => {
+            filtersDiv.classList.toggle('active');
+        });
+    }
+
+    // --- FORMULARIO DE RETIRO ---
+    const withdrawalMethod = document.getElementById('withdrawalMethod');
+    if(withdrawalMethod){
+        const transferenciaFields = document.getElementById('transferenciaFields');
+        const giroFields = document.getElementById('giroFields');
+        
+        withdrawalMethod.addEventListener('change', () => {
+            if (withdrawalMethod.value === 'transferencia'){
+                transferenciaFields.style.display = 'block';
+                giroFields.style.display = 'none';
+            } else if (withdrawalMethod.value === 'giro') {
+                transferenciaFields.style.display = 'none';
+                giroFields.style.display = 'block';
+            } else {
+                transferenciaFields.style.display = 'none';
+                giroFields.style.display = 'none';
+            }
         });
     }
 });

@@ -15,7 +15,7 @@
             </select>
         </div>
         <div class="form-group">
-            <label for="files">Archivos (puedes seleccionar varias fotos para un anuncio)</label>
+            <label for="files">Archivos (puedes seleccionar varias fotos o videos)</label>
             <input type="file" id="files" name="files" accept="image/*,video/*" required multiple>
         </div>
         <div class="form-group">
@@ -40,6 +40,10 @@
         </div>
 
         <div id="image-fields" style="display: none;">
+            <div class="form-group">
+                <label for="address">Dirección o Zona (Opcional)</label>
+                <input type="text" id="address" name="address" placeholder="Ej: Asunción, cerca del Shopping del Sol">
+            </div>
             <div class="form-group">
                 <label for="services">Servicios (separados por coma)</label>
                 <input type="text" id="services" name="services" placeholder="Ej: Show, Acompañante, Masajes">

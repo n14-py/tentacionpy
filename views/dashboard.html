@@ -6,11 +6,11 @@
 
 <div class="dashboard-container">
     <h2>Resumen de Ganancias</h2>
-    <div class="post-grid" style="grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));">
+    <div class="post-grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));">
         <div class="stat-card">
             <h3>Ganancias Netas Totales</h3>
             <p><%= totalNetEarnings.toFixed(0) %> TPYS</p>
-            <span>≈ <%= (totalNetEarnings / TPYS_TO_GS_RATE).toLocaleString('es-PY', {style: 'currency', currency: 'PYG'}) %></span>
+            <span>≈ <%= (totalNetEarnings * TPYS_TO_GS_RATE).toLocaleString('es-PY', {style: 'currency', currency: 'PYG'}) %></span>
         </div>
         <div class="stat-card">
             <h3>Videos Vendidos</h3>
@@ -21,6 +21,11 @@
             <h3>Tus Videos Publicados</h3>
             <p><%= myVideos.length %></p>
             <a href="/new-post" class="btn btn-primary" style="margin-top: 1rem;">Publicar Nuevo</a>
+        </div>
+        <div class="stat-card">
+            <h3>Saldo Retirable</h3>
+            <p><%= currentUser.tpysBalance.toFixed(0) %> TPYS</p>
+            <a href="/withdrawal" class="btn btn-success" style="margin-top: 1rem;">Retirar Fondos</a>
         </div>
     </div>
     <a href="/payout-info" class="btn btn-secondary" style="margin: 2rem auto; display: block; width: fit-content;">Información sobre Pagos</a>
@@ -35,7 +40,7 @@
                 <th>Precio (TPYS)</th>
                 <th>Ventas</th>
                 <th>Vistas</th>
-                <th>Ganancia Neta</th>
+                <th>Ganancia Neta (Gs.)</th>
                 <th>Acciones</th>
             </tr>
         </thead>
@@ -44,13 +49,13 @@
                 <tr>
                     <td>
                         <a href="/post/<%= video._id %>">
-                            <video src="<%= video.files[0] %>" muted></video>
+                            <video src="<%= video.files[0] %>#t=2" muted preload="metadata"></video>
                         </a>
                     </td>
                     <td><%= video.price %></td>
                     <td><%= video.salesCount %></td>
                     <td><%= video.views %></td>
-                    <td><%= (video.price * 0.55 * video.salesCount).toFixed(0) %> TPYS</td>
+                    <td><%= ((video.price * 0.55 * video.salesCount) * TPYS_TO_GS_RATE).toLocaleString('es-PY', {style: 'currency', currency: 'PYG'}) %></td>
                     <td>
                         <a href="/post/<%= video._id %>/edit" class="btn btn-secondary">Editar</a>
                     </td>

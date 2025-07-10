@@ -1,0 +1,39 @@
+<%- include('partials/header.html') %>
+
+<div class="page-header">
+    <h1>Mis Likes</h1>
+    <a href="/profile" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver a mi Perfil</a>
+</div>
+
+<div class="post-grid">
+    <% if(posts && posts.length > 0) { %>
+        <% posts.forEach(post => { %>
+            <div class="post-card">
+                <a href="/anuncio/<%= post._id %>" class="post-image-link">
+                    <% if (post.type === 'image') { %>
+                        <img src="<%= post.files[0] %>" alt="Anuncio" class="post-image">
+                    <% } else { %>
+                        <video src="<%= post.files[0] %>#t=2" muted preload="metadata" class="post-image"></video>
+                    <% } %>
+                </a>
+                <div class="post-content">
+                    <div class="post-header">
+                        <a href="/user/<%= post.userId._id %>">
+                           <img src="<%= post.userId.profilePic %>" alt="Foto de perfil">
+                        </a>
+                        <div>
+                             <a href="/user/<%= post.userId._id %>" class="username-link"><%= post.userId.username %></a>
+                        </div>
+                    </div>
+                     <p><%= post.description.substring(0, 80) %>...</p>
+                </div>
+            </div>
+        <% }) %>
+    <% } else { %>
+        <h3 style="grid-column: 1 / -1; text-align: center; color: var(--light-gray); margin-top: 3rem;">
+            Todavía no te ha gustado ninguna publicación.
+        </h3>
+    <% } %>
+</div>
+
+<%- include('partials/footer.html') %>

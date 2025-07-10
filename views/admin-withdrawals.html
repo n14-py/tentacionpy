@@ -1,0 +1,74 @@
+<%- include('partials/header.html') %>
+
+<div class="page-header">
+    <h1>Gestionar Retiros</h1>
+</div>
+
+<div class="dashboard-container">
+    <h2>Solicitudes de Retiro Pendientes</h2>
+    <div style="overflow-x: auto;">
+        <table class="dashboard-table">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Usuario</th>
+                    <th>Monto (TPYS)</th>
+                    <th>Equivalente (Gs.)</th>
+                    <th>Método</th>
+                    <th>Detalles</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% withdrawals.forEach(w => { %>
+                    <% if (w.status === 'pendiente') { %>
+                    <tr>
+                        <td><%= formatDate(w.createdAt) %></td>
+                        <td>
+    <% if (w.userId) { %>
+        <%= w.userId.username %><br><small><%= w.userId.email %></small>
+    <% } else { %>
+        <span style="color: var(--error-color);">Usuario Eliminado</span>
+    <% } %>
+</td>
+                        <td><%= w.amount.toLocaleString('es-PY') %></td>
+                        <td><%= (w.amount * 100).toLocaleString('es-PY', {style: 'currency', currency: 'PYG'}) %></td>
+                        <td><%= w.method %></td>
+                        <td>
+                            <% if(w.method === 'transferencia') { %>
+                                <strong>Banco:</strong> <%= w.details.bankName %><br>
+                                <strong>Cuenta:</strong> <%= w.details.accountNumber %><br>
+                                <strong>Tipo:</strong> <%= w.details.accountType %><br>
+                                <strong>Nombre:</strong> <%= w.details.fullName %><br>
+                                <strong>CI:</strong> <%= w.details.ci %><br>
+                                <strong>Alias:</strong> <%= w.details.alias || 'N/A' %>
+                            <% } else { %>
+                                <strong>Nombre:</strong> <%= w.details.fullName %><br>
+                                <strong>CI:</strong> <%= w.details.ci %><br>
+                                <strong>Teléfono:</strong> <%= w.details.phone %>
+                            <% } %>
+                        </td>
+                        <td><span style="color:orange; font-weight: bold;"><%= w.status %></span></td>
+                        <td>
+                            <form action="/admin/withdrawal/<%= w._id %>/complete" method="POST" style="display: inline-block; margin-bottom: 5px;">
+                                <button type="submit" class="btn btn-primary" style="background: var(--success-color);">Completado</button>
+                            </form>
+                            <form action="/admin/withdrawal/<%= w._id %>/reject" method="POST" style="display: inline-block;">
+                                <button type="submit" class="btn btn-danger">Rechazar</button>
+                            </form>
+                        </td>
+                    </tr>
+                    <% } %>
+                <% }) %>
+                 <% if (withdrawals.filter(w => w.status === 'pendiente').length === 0) { %>
+                    <tr>
+                        <td colspan="8" style="text-align: center;">No hay solicitudes de retiro pendientes.</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<%- include('partials/footer.html') %>

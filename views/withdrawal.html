@@ -1,0 +1,80 @@
+<%- include('partials/header.html') %>
+
+<div class="page-header">
+    <h1>Retirar Fondos</h1>
+    <a href="/dashboard" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver al Panel</a>
+</div>
+
+<div class="form-container">
+    <h2>Tu Saldo Retirable: <span style="color: var(--accent-color)"><%= currentUser.tpysBalance.toFixed(0) %> TPYS</span></h2>
+    <p>Completa el formulario para solicitar un retiro. El monto mínimo es de 50,000 TPYS.</p>
+    
+    <% if (success) { %>
+        <div class="success-message"><%= success %></div>
+    <% } %>
+    <% if (error) { %>
+        <div class="error-message"><%= error %></div>
+    <% } %>
+
+    <form action="/withdrawal" method="POST">
+        <div class="form-group">
+            <label for="amount">Monto a Retirar (TPYS)</label>
+            <input type="number" id="amount" name="amount" required min="50000" step="1" placeholder="Mínimo: 50000">
+        </div>
+        
+        <div class="form-group">
+            <label for="withdrawalMethod">Método de Retiro</label>
+            <select id="withdrawalMethod" name="method" required>
+                <option value="">Selecciona un método</option>
+                <option value="transferencia">Transferencia Bancaria</option>
+                <option value="giro">Giro</option>
+            </select>
+        </div>
+
+        <div id="transferenciaFields" style="display:none;">
+            <div class="form-group">
+                <label for="fullName">Nombre Completo</label>
+                <input type="text" name="fullName" placeholder="Tu nombre completo">
+            </div>
+            <div class="form-group">
+                <label for="ci">Cédula de Identidad</label>
+                <input type="text" name="ci" placeholder="Tu número de cédula">
+            </div>
+            <div class="form-group">
+                <label for="bankName">Nombre del Banco</label>
+                <input type="text" name="bankName" placeholder="Ej: Banco Itaú">
+            </div>
+            <div class="form-group">
+                <label for="accountNumber">Número de Cuenta</label>
+                <input type="text" name="accountNumber" placeholder="Tu número de cuenta">
+            </div>
+            <div class="form-group">
+                <label for="accountType">Tipo de Cuenta</label>
+                <input type="text" name="accountType" placeholder="Ej: Caja de Ahorro">
+            </div>
+             <div class="form-group">
+                <label for="alias">Alias (Opcional)</label>
+                <input type="text" name="alias" placeholder="Tu alias de transferencia">
+            </div>
+        </div>
+        
+        <div id="giroFields" style="display:none;">
+             <div class="form-group">
+                <label for="fullNameGiro">Nombre Completo</label>
+                <input type="text" name="fullNameGiro" placeholder="Tu nombre completo">
+            </div>
+             <div class="form-group">
+                <label for="ciGiro">Cédula de Identidad</label>
+                <input type="text" name="ciGiro" placeholder="Tu número de cédula">
+            </div>
+            <div class="form-group">
+                <label for="phone">Número de Teléfono</label>
+                <input type="text" name="phone" placeholder="Tu número para el giro">
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Solicitar Retiro</button>
+    </form>
+</div>
+
+<%- include('partials/footer.html') %>

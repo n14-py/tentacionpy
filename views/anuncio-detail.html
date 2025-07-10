@@ -43,8 +43,8 @@
         </div>
         
         <div class="post-actions" style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
-            <button class="like-button <%= post.likes.includes(currentUser?._id) ? 'liked' : '' %>" data-post-id="<%= post._id %>">
-                <i class="fa-heart <%= post.likes.includes(currentUser?._id) ? 'fas' : 'far' %>"></i> 
+            <button class="like-button <%= currentUser && post.likes.includes(currentUser._id) ? 'liked' : '' %>" data-post-id="<%= post._id %>">
+                <i class="fa-heart <%= currentUser && post.likes.includes(currentUser._id) ? 'fas' : 'far' %>"></i> 
                 <span class="like-count"><%= post.likes.length %></span>
             </button>
              <% if(currentUser && post.userId._id.equals(currentUser._id)) { %>
@@ -55,6 +55,7 @@
                     <i class="fas fa-trash"></i>
                 </button>
             <% } %>
+            <a href="https://api.whatsapp.com/send?text=¡Mira este anuncio en TentacionPY! <%= process.env.BASE_URL %>/anuncio/<%= post._id %>" class="btn btn-success" target="_blank"><i class="fab fa-whatsapp"></i></a>
         </div>
 
         <div class="info-section">
@@ -131,46 +132,6 @@
                 <% }) %>
             </ul>
         </div>
-
-        <hr>
-
-        <% if (currentUser && post.userId._id.toString() === currentUser._id.toString()) { %>
-        <div class="info-section">
-            <h3>✨ ¡Hazlo Viral!</h3>
-            <p>Impulsa este anuncio para que aparezca primero y obtenga más visitas.</p>
-            <% if(post.boostedUntil && new Date(post.boostedUntil) > new Date()) { %>
-                <div class="success-message">¡Este post está impulsado hasta <%= formatDate(post.boostedUntil) %>!</div>
-            <% } %>
-            <form action="/post/<%= post._id %>/boost" method="POST">
-                <div class="boost-form-options">
-                    <div class="form-group">
-                        <label>Color de Fondo</label>
-                        <div class="color-options">
-                            <input type="radio" id="color-fire" name="color" value="linear-gradient(140deg, #53122c, #240b19)" checked><label for="color-fire" style="background: linear-gradient(140deg, #e4007c, #ff4f8b);"></label>
-                            <input type="radio" id="color-gold" name="color" value="linear-gradient(140deg, #4d3f18, #221c0b)"><label for="color-gold" style="background: linear-gradient(140deg, #ffc400, #ffdb5d);"></label>
-                            <input type="radio" id="color-premium" name="color" value="linear-gradient(140deg, #2c1a4d, #110b22)"><label for="color-premium" style="background: linear-gradient(140deg, #8A2BE2, #4B0082);"></label>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Emoji del Badge</label>
-                        <div class="emoji-options">
-                             <input type="radio" id="emoji-fire" name="emoji" value="🔥" checked><label for="emoji-fire">🔥</label>
-                             <input type="radio" id="emoji-star" name="emoji" value="⭐"><label for="emoji-star">⭐</label>
-                             <input type="radio" id="emoji-diamond" name="emoji" value="💎"><label for="emoji-diamond">💎</label>
-                        </div>
-                    </div>
-                </div>
-                 <div class="form-group" style="margin-top: 1rem;">
-                    <label for="duration">Duración del Impulso</label>
-                     <select name="duration" id="duration" required>
-                        <option value="1">1 Día (80 TPYS)</option>
-                        <option value="10">10 Días (500 TPYS)</option>
-                    </select>
-                </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Impulsar</button>
-            </form>
-        </div>
-        <% } %>
     </div>
 </div>
 
@@ -214,6 +175,5 @@
         }
     });
 </script>
-
 
 <%- include('partials/footer.html') %>
