@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat con <%= locals.otherUser ? otherUser.username : 'Usuario' %> - TentacionPY</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body class="chat-page-body">
+
+<div class="chat-container">
+    <header class="chat-header">
+        <a href="/chat" class="back-button"><i class="fas fa-arrow-left"></i></a>
+        <% if (locals.otherUser) { %>
+            <img src="<%= otherUser.profilePic %>" alt="Avatar de <%= otherUser.username %>" class="avatar">
+            <div class="chat-title">
+                <strong><%= otherUser.username %></strong>
+            </div>
+        <% } %>
+    </header>
+
+    <main class="chat-body" id="chat-body">
+        <% if (locals.messages && messages.length > 0) { %>
+            <% messages.forEach(msg => { %>
+                <% if (msg && msg.senderId) { %>
+                    <% const isMine = msg.senderId._id.equals(currentUser._id); %>
+                    <div class="message <%= isMine ? 'sent' : 'received' %>">
+                        <div class="message-content">
+                            <p><%= msg.text %></p>
+                            <% if (msg.tpysAmount && msg.tpysAmount > 0) { %>
+                                <div class="tip-badge">
+                                    <i class="fas fa-gem"></i> <%= msg.tpysAmount %> TPYS
+                                </div>
+                            <% } %>
+                            <span class="message-time"><%= formatDate(msg.createdAt) %></span>
+                        </div>
+                    </div>
+                <% } %>
+            <% }); %>
+        <% } else { %>
+            <p class="text-center text-muted mt-4">Aún no hay mensajes. ¡Inicia la conversación!</p>
+        <% } %>
+    </main>
+
+    <footer class="chat-footer">
+        <form id="message-form" class="message-form" autocomplete="off">
+            <input type="text" id="message-input" name="text" placeholder="Escribe un mensaje..." required>
+            
+            <button type="button" class="btn-icon" id="tip-button" title="Enviar Propina">
+                <i class="fas fa-gem"></i>
+            </button>
+            
+            <button type="submit" class="btn-icon btn-send" title="Enviar Mensaje">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </form>
+    </footer>
+</div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const chatBody = document.getElementById('chat-body');
+    const messageForm = document.getElementById('message-form');
+    const messageInput = document.getElementById('message-input');
+    const tipButton = document.getElementById('tip-button');
+    const conversationId = window.location.pathname.split('/').pop();
+
+    function formatDate(dateString) {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    if (chatBody) {
+        chatBody.scrollTop = chatBody.scrollHeight;
+    }
+
+    if (tipButton) {
+        tipButton.addEventListener('click', () => {
+            const amount = prompt("¿Cuántos TPYS quieres enviar como propina?", "50");
+            if (amount && !isNaN(amount) && parseInt(amount) > 0) {
+                const text = `Te he enviado una propina de ${amount} TPYS.`;
+                sendMessage(text, parseInt(amount));
+            }
+        });
+    }
+
+    if (messageForm) {
+        messageForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const text = messageInput.value.trim();
+            if (text) {
+                sendMessage(text, 0);
+            }
+        });
+    }
+
+    async function sendMessage(text, tpysAmount) {
+        const originalText = text;
+        messageInput.value = '';
+        messageInput.disabled = true;
+
+        try {
+            const response = await fetch(`/chat/${conversationId}/messages`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text, tpysAmount })
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.message || 'Error al enviar el mensaje');
+            }
+
+            appendMessage(data.message);
+
+        } catch (error) {
+            alert(error.message);
+            if (tpysAmount === 0) {
+               messageInput.value = originalText;
+            }
+        } finally {
+            messageInput.disabled = false;
+            messageInput.focus();
+        }
+    }
+
+    function appendMessage(msg) {
+        if (!msg || !msg.senderId) return;
+
+        const isMine = msg.senderId._id === "<%= currentUser._id.toString() %>";
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${isMine ? 'sent' : 'received'}`;
+
+        let tipHTML = '';
+        if (msg.tpysAmount && msg.tpysAmount > 0) {
+            tipHTML = `<div class="tip-badge"><i class="fas fa-gem"></i> ${msg.tpysAmount} TPYS</div>`;
+        }
+        
+        messageDiv.innerHTML = `
+            <div class="message-content">
+                <p>${msg.text}</p>
+                ${tipHTML}
+                <span class="message-time">${formatDate(msg.createdAt)}</span>
+            </div>`;
+        chatBody.appendChild(messageDiv);
+        chatBody.scrollTop = chatBody.scrollHeight;
+    }
+});
+</script>
+
+</body>
+</html>

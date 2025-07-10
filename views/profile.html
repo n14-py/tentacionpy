@@ -1,49 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil de <%= locals.userProfile ? userProfile.username : 'Usuario' %> - TentacionPY</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+
+<%# La ruta es correcta porque este archivo está en la raíz de /views %>
 <%- include('partials/header.html') %>
 
-<div class="profile-header">
-    <img src="<%= user.profilePic %>" alt="Foto de perfil">
-    <div class="profile-info">
-        <h1><%= user.username %></h1>
-        <div class="profile-stats">
-            <span><strong><%= posts.length %></strong> publicaciones</span>
-            <a href="/user/<%= user._id %>/followers"><strong><%= user.followers.length %></strong> seguidores</a>
-            <a href="/user/<%= user._id %>/following"><strong><%= user.following.length %></strong> siguiendo</a>
+<% if (locals.userProfile) { %>
+<main class="container">
+    <div class="profile-header">
+        <div class="profile-avatar">
+            <img src="<%= userProfile.profilePic %>" alt="Foto de perfil de <%= userProfile.username %>">
         </div>
-        <p><%= user.bio %></p>
-        <a href="/edit-profile" class="btn btn-secondary">Editar Perfil</a>
-    </div>
-</div>
-
-<div class="post-grid" style="margin-top: 2rem;">
-     <% if(posts.length > 0) { %>
-        <% posts.forEach(post => { %>
-            <div class="post-card">
-                 <a href="<%= post.type === 'image' ? `/anuncio/${post._id}` : `/post/${post._id}` %>" class="post-image-link">
-                    <% if (post.type === 'image') { %>
-                        <img src="<%= post.files[0] %>" alt="Anuncio" class="post-image">
-                    <% } else { %>
-                        <video src="<%= post.files[0] %>#t=2" muted class="post-image"></video>
-                    <% } %>
-                </a>
-                <div class="post-content">
-                    <p><%= post.description.substring(0, 80) %>...</p>
-                    <div class="post-actions" style="display: flex; gap: 0.5rem;">
-                        <a href="/post/<%= post._id %>/edit" class="btn btn-secondary" style="flex-grow: 1;">Editar</a>
-                        <button type="button" class="btn btn-danger confirm-action-btn" 
-                            data-message="¿Estás seguro de que quieres borrar esta publicación?" 
-                            data-action="/post/<%= post._id %>/delete">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
+        <div class="profile-info">
+            <div class="profile-title">
+                <h1><%= userProfile.username %></h1>
+                <div class="profile-actions">
+                    <a href="/settings/profile" class="btn btn-secondary">Editar Perfil</a>
+                    <a href="/new-post" class="btn btn-primary">Crear Anuncio</a>
                 </div>
             </div>
-        <% }) %>
-    <% } else { %>
-        <h3 style="grid-column: 1 / -1; text-align: center; color: var(--light-gray); margin-top: 3rem;">
-            Aún no has publicado nada. ¡Crea tu primera publicación!
-            <a href="/new-post" class="btn btn-primary" style="margin-top: 1rem; display: inline-block;">Crear Publicación</a>
-        </h3>
-    <% } %>
-</div>
+
+            <div class="profile-stats">
+                <span><strong><%= posts ? posts.length : 0 %></strong> publicaciones</span>
+                <span><strong><%= userProfile.followers ? userProfile.followers.length : 0 %></strong> seguidores</span>
+                <span><strong><%= userProfile.following ? userProfile.following.length : 0 %></strong> siguiendo</span>
+            </div>
+            
+            <% if (userProfile.bio) { %>
+                <p class="profile-bio"><%= userProfile.bio %></p>
+            <% } %>
+        </div>
+    </div>
+
+    <div class="profile-tabs">
+        <a href="/user/<%= userProfile.username %>" class="tab-link active"><i class="fas fa-th"></i> PUBLICACIONES</a>
+        <a href="/my-likes" class="tab-link"><i class="fas fa-heart"></i> MIS LIKES</a>
+        <a href="/my-videos" class="tab-link"><i class="fas fa-video"></i> MIS COMPRAS</a>
+    </div>
+
+    <div class="post-grid">
+        <% if (posts && posts.length > 0) { %>
+            <% posts.forEach(post => { %>
+                <% 
+                   const isBoosted = post.boostedUntil && new Date(post.boostedUntil) > new Date();
+                   const boostColor = (isBoosted && post.boostOptions && post.boostOptions.color) ? post.boostOptions.color : '#E91E63';
+                %>
+                <div class="post-card <%= isBoosted ? 'boosted' : '' %>" <% if (isBoosted) { %>style="--boost-color: <%= boostColor %>"<% } %>>
+                    <% if(isBoosted && post.boostOptions && post.boostOptions.label) { %>
+                        <div class="boost-label"><%= post.boostOptions.label %></div>
+                    <% } %>
+                    <a href="/anuncio/<%= post._id %>" class="post-card-link">
+                        <% if (post.files && post.files.length > 0) { %>
+                           <img src="<%= post.files[0] %>" alt="Post de <%= userProfile.username %>" class="post-card-image">
+                        <% } %>
+                        <% if (post.isSubscriberOnly || (post.type === 'video' && post.price > 0)) { %>
+                           <div class="content-lock-icon"><i class="fas fa-lock"></i></div>
+                        <% } %>
+                        <% if (post.type === 'video') { %>
+                            <div class="video-overlay"><i class="fas fa-play"></i></div>
+                        <% } %>
+                    </a>
+                    <div class="post-card-info">
+                        <div class="post-card-stats solo">
+                            <span><i class="fas fa-heart"></i> <%= post.likes ? post.likes.length : 0 %></span>
+                            <span><i class="fas fa-eye"></i> <%= post.views || 0 %></span>
+                            <span><i class="fas fa-comments"></i> <%= post.comments ? post.comments.length : 0 %></span>
+                        </div>
+                    </div>
+                </div>
+            <% }); %>
+        <% } else { %>
+            <div class="no-results-card">
+                <h3>Aún no has publicado nada</h3>
+                <p>¡Es hora de crear tu primer anuncio y empezar a ganar seguidores!</p>
+                <a href="/new-post" class="btn btn-primary">Crear mi primer anuncio</a>
+            </div>
+        <% } %>
+    </div>
+</main>
+<% } else { %>
+    <main class="container">
+        <div class="error-container">
+            <h2>Usuario no encontrado</h2>
+            <p>El perfil que buscas no existe o ha sido eliminado.</p>
+            <a href="/feed" class="btn btn-primary">Volver al inicio</a>
+        </div>
+    </main>
+<% } %>
 
 <%- include('partials/footer.html') %>
+
+</body>
+</html>

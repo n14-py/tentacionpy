@@ -1,89 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuevo Anuncio - TentacionPY</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+
 <%- include('partials/header.html') %>
 
-<div class="page-header">
-    <h1>Crear Nueva Publicación</h1>
-    <a href="/profile" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver a mi Perfil</a>
-</div>
+<main class="container">
+    <div class="form-container">
+        <h2>Crear Nuevo Anuncio</h2>
+        <p>Sube tus mejores fotos o videos para atraer a tus fans. Un buen título y descripción marcan la diferencia.</p>
+        <hr>
+        
+        <form action="/new-post" method="POST" enctype="multipart/form-data">
+            
+            <div class="form-group">
+                <label for="type">1. Elige el tipo de contenido</label>
+                <select id="type" name="type" class="form-control" required>
+                    <option value="image">Anuncio de Imagen (Para promocionar servicios)</option>
+                    <option value="video">Video Exclusivo (Para vender o para suscriptores)</option>
+                </select>
+            </div>
 
-<div class="form-container">
-    <form action="/new-post" method="POST" enctype="multipart/form-data">
-        <div class="form-group">
-            <label for="type">Tipo de Publicación</label>
-            <select id="type" name="type" required>
-                <option value="image">Anuncio (Fotos Gratis)</option>
-                <option value="video">Video en Venta</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label for="files">Archivos (puedes seleccionar varias fotos o videos)</label>
-            <input type="file" id="files" name="files" accept="image/*,video/*" required multiple>
-        </div>
-        <div class="form-group">
-            <label for="description">Descripción</label>
-            <textarea id="description" name="description" required placeholder="Describe tu publicación..."></textarea>
-        </div>
-         <div class="form-group">
-            <label for="category">Categoría</label>
-            <select id="category" name="category" required>
-                <% CATEGORIES.forEach(cat => { %>
-                    <option value="<%= cat %>"><%= cat %></option>
-                <% }) %>
-            </select>
-        </div>
-        <div class="form-group">
-            <label for="tags">Tags (separados por coma)</label>
-            <input type="text" id="tags" name="tags" placeholder="Ej: rubia, delgada, tatuajes">
-        </div>
-        <div class="form-group">
-            <label for="whatsapp">WhatsApp de Contacto (opcional)</label>
-            <input type="text" id="whatsapp" name="whatsapp" placeholder="Se usará el de tu perfil si lo dejas vacío">
-        </div>
+            <div class="form-group">
+                <label for="files">2. Sube tus archivos (Hasta 10, el primero será la portada)</label>
+                <input type="file" id="files" name="files" class="form-control" multiple required accept="image/jpeg, image/png, image/jpg, video/mp4, video/quicktime, video/x-msvideo">
+            </div>
 
-        <div id="image-fields" style="display: none;">
             <div class="form-group">
-                <label for="address">Dirección o Zona (Opcional)</label>
-                <input type="text" id="address" name="address" placeholder="Ej: Asunción, cerca del Shopping del Sol">
+                <label for="description">3. Escribe una descripción atractiva</label>
+                <textarea id="description" name="description" rows="4" class="form-control" required placeholder="Describe tu anuncio, qué ofreces, etc."></textarea>
             </div>
-            <div class="form-group">
-                <label for="services">Servicios (separados por coma)</label>
-                <input type="text" id="services" name="services" placeholder="Ej: Show, Acompañante, Masajes">
-            </div>
-            <div class="form-group">
-                <label for="rate">Tarifa</label>
-                <input type="text" id="rate" name="rate" placeholder="Ej: 500.000 Gs. / hora">
-            </div>
-        </div>
-        <div id="video-fields" style="display: none;">
-            <div class="form-group">
-                <label for="price">Precio en TPYS</label>
-                <input type="number" id="price" name="price" value="0" min="0">
-            </div>
-        </div>
 
-        <button type="submit" class="btn btn-primary" style="width: 100%;">Publicar</button>
-    </form>
-</div>
+            <div class="form-group">
+                <label for="category">4. Selecciona una categoría</label>
+                <select id="category" name="category" class="form-control" required>
+                    <% if (locals.CATEGORIES) { %>
+                        <% CATEGORIES.forEach(cat => { %>
+                            <option value="<%= cat %>"><%= cat %></option>
+                        <% }); %>
+                    <% } %>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="tags">5. Añade etiquetas (separadas por comas)</label>
+                <input type="text" id="tags" name="tags" class="form-control" placeholder="Ej: rubia, tatuajes, lencería">
+            </div>
+            
+            <div id="image-fields">
+                <hr>
+                <h4>Detalles del Anuncio de Servicios</h4>
+                <div class="form-group">
+                    <label for="whatsapp">Tu WhatsApp (Opcional, se mostrará en el anuncio)</label>
+                    <input type="text" id="whatsapp" name="whatsapp" class="form-control" placeholder="Tu número de contacto">
+                </div>
+                <div class="form-group">
+                    <label for="address">Dirección o Zona de atención (Opcional)</label>
+                    <input type="text" id="address" name="address" class="form-control" placeholder="Ej: Barrio San Pablo, Asunción">
+                </div>
+                <div class="form-group">
+                    <label for="services">Servicios que ofreces (separados por coma)</label>
+                    <input type="text" id="services" name="services" class="form-control" placeholder="Ej: Show, Acompañante, Cenas">
+                </div>
+                <div class="form-group">
+                    <label for="rate">Tarifa de referencia</label>
+                    <input type="text" id="rate" name="rate" class="form-control" placeholder="Ej: 500.000 Gs por hora">
+                </div>
+            </div>
+
+            <div id="video-fields" style="display: none;">
+                <hr>
+                <h4>Opciones del Video</h4>
+                <div class="form-group-checkbox">
+                    <input type="checkbox" id="isSubscriberOnly" name="isSubscriberOnly">
+                    <label for="isSubscriberOnly">Hacer este video <strong>gratis y exclusivo</strong> solo para mis suscriptores</label>
+                </div>
+                 <div class="form-group" id="price-group">
+                    <label for="price">Precio de venta del video (en TPYS 💎)</label>
+                    <input type="number" id="price" name="price" class="form-control" min="0" value="0" placeholder="Ej: 250">
+                </div>
+            </div>
+
+            <hr>
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary btn-block">Publicar Anuncio</button>
+            </div>
+        </form>
+    </div>
+</main>
+
+<%- include('partials/footer.html') %>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    // --- LÓGICA PARA FORMULARIO DE NUEVO POST ---
-    const postTypeSelect = document.getElementById('type');
-    if (postTypeSelect) {
+    document.addEventListener('DOMContentLoaded', () => {
+        const typeSelect = document.getElementById('type');
         const imageFields = document.getElementById('image-fields');
         const videoFields = document.getElementById('video-fields');
-        const togglePostFields = () => {
-            if (postTypeSelect.value === 'image') {
+        const isSubscriberOnlyCheckbox = document.getElementById('isSubscriberOnly');
+        const priceGroup = document.getElementById('price-group');
+        const priceInput = document.getElementById('price');
+
+        function toggleFields() {
+            if (typeSelect.value === 'image') {
                 imageFields.style.display = 'block';
                 videoFields.style.display = 'none';
             } else {
                 imageFields.style.display = 'none';
                 videoFields.style.display = 'block';
             }
-        };
-        postTypeSelect.addEventListener('change', togglePostFields);
-        togglePostFields();
-    }
-});
+        }
+
+        function togglePrice() {
+            if (isSubscriberOnlyCheckbox.checked) {
+                priceInput.value = 0;
+                priceInput.required = false;
+                priceGroup.style.display = 'none';
+            } else {
+                priceGroup.style.display = 'block';
+                // El campo de precio para videos no de suscriptores debe ser requerido.
+                priceInput.required = typeSelect.value === 'video';
+            }
+        }
+        
+        typeSelect.addEventListener('change', () => {
+            toggleFields();
+            togglePrice(); // Asegurarse de que la validación de 'required' se actualice.
+        });
+        isSubscriberOnlyCheckbox.addEventListener('change', togglePrice);
+        
+        toggleFields();
+        togglePrice();
+    });
 </script>
 
-<%- include('partials/footer.html') %>
+</body>
+</html>

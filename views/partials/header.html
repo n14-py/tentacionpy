@@ -1,51 +1,62 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TentacionPY - Clasificados para Adultos en Paraguay</title>
-    <link rel="stylesheet" href="/css/style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
-</head>
-<body>
-
-<header>
-    <a href="/" class="logo">TentacionPY</a>
-    <nav class="desktop-nav">
-         <% if (locals.currentUser) { %>
-            <div class="user-menu-container">
-                <button id="user-menu-button">
-                    <img src="<%= currentUser.profilePic %>" alt="Mi Perfil">
-                    <i class="fas fa-chevron-down"></i>
-                </button>
-                <div id="user-menu" class="user-menu">
-                    <div class="user-menu-header">
-                        Hola, <strong><%= currentUser.username %></strong>
-                        <div class="tpys-balance" title="Tu saldo de TPYS"><%= currentUser.tpysBalance.toFixed(0) %> TPYS</div>
-                    </div>
-                    <a href="/profile"><i class="fas fa-user-circle"></i> Mi Perfil</a>
-                    <a href="/dashboard"><i class="fas fa-chart-line"></i> Panel de Creador</a>
-                    <a href="/my-videos"><i class="fas fa-play-circle"></i> Mis Videos</a>
-                    <a href="/my-likes"><i class="fas fa-heart"></i> Mis Likes</a>
-                    <a href="/add-funds"><i class="fas fa-wallet"></i> Añadir Fondos</a>
-                    <a href="/settings"><i class="fas fa-cog"></i> Configuración</a>
-                    <a href="/logout" class="logout-link"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
+<header class="main-header">
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="/feed">TentacionPY</a>
+        </div>
+        <div class="navbar-user">
+            <% if (currentUser) { %>
+                <div class="desktop-user-actions">
+                    <a href="/add-funds" class="btn btn-sm btn-primary">
+                        💎 <%= currentUser.tpysBalance %> TPYS
+                    </a>
+                    <a href="/chat" class="nav-icon-link" title="Chats"><i class="fas fa-comments"></i></a>
+                    <a href="/notifications" class="nav-icon-link" title="Notificaciones">
+                        <i class="fas fa-bell"></i>
+                        <% if (locals.unreadNotifications && unreadNotifications > 0) { %>
+                            <span class="notification-badge"><%= unreadNotifications %></span>
+                        <% } %>
+                    </a>
                 </div>
-            </div>
-        <% } else { %>
-            <a href="/login" class="btn btn-secondary">Iniciar Sesión</a>
-            <a href="/register" class="btn btn-primary">Crear Cuenta</a>
-        <% } %>
+                <div class="user-menu">
+                    <img src="<%= currentUser.profilePic %>" alt="Perfil" class="user-avatar" id="user-menu-trigger">
+                    <div class="user-dropdown" id="user-dropdown-menu">
+                        <a href="/feed"><strong>🏠 Inicio</strong></a>
+                        <div class="dropdown-divider"></div>
+                        <a href="/user/<%= currentUser.username %>">Mi Perfil</a>
+                        <a href="/settings/dashboard">Panel de Creador</a>
+                        <a href="/my-videos">Mis Compras</a>
+                        <a href="/settings/profile">Configuración</a>
+                        <div class="dropdown-divider"></div>
+                        <a href="/logout">Cerrar Sesión</a>
+                    </div>
+                </div>
+                <div class="mobile-menu-icon" id="mobile-menu-trigger"><i class="fas fa-bars"></i></div>
+            <% } else { %>
+                <a href="/login" class="btn btn-secondary">Iniciar Sesión</a>
+                <a href="/register" class="btn btn-primary">Registrarse</a>
+            <% } %>
+        </div>
     </nav>
-    <div class="mobile-auth-links">
-        <% if (!locals.currentUser) { %>
-            <a href="/login" class="btn btn-secondary">Login</a>
-            <a href="/register" class="btn btn-primary">Registro</a>
-        <% } %>
+    <% if (currentUser) { %>
+    <div class="mobile-nav-panel" id="mobile-nav">
+        <div class="mobile-nav-header">
+            <img src="<%= currentUser.profilePic %>" alt="Perfil" class="user-avatar">
+            <div>
+                <strong><%= currentUser.username %></strong>
+                <span class="tpy-balance">💎 <%= currentUser.tpysBalance %> TPYS</span>
+            </div>
+            <span id="close-mobile-menu" class="close-btn">&times;</span>
+        </div>
+        <a href="/feed"><strong>🏠 Inicio</strong></a>
+        <a href="/user/<%= currentUser.username %>">👤 Mi Perfil</a>
+        <a href="/settings/dashboard">📈 Panel de Creador</a>
+        <a href="/my-videos">📹 Mis Compras</a>
+        <a href="/chat">💬 Chats</a>
+        <a href="/notifications">🔔 Notificaciones</a>
+        <a href="/add-funds">💰 Recargar TPYS</a>
+        <a href="/settings/profile">⚙️ Configuración</a>
+        <div class="dropdown-divider"></div>
+        <a href="/logout" class="logout-link">Cerrar Sesión</a>
     </div>
+    <% } %>
 </header>
-
-<main class="container">

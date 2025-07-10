@@ -1,0 +1,90 @@
+<%- include('partials/header.html') %>
+
+<div class="page-header">
+    <h1>Configurar Suscripciones</h1>
+    <p>Ofrece contenido exclusivo a tus seguidores a cambio de una tarifa mensual.</p>
+</div>
+
+<div class="dashboard-grid">
+    <div class="form-container" style="max-width: none;">
+        <% if (locals.success) { %><div class="success-message"><%= success %></div><% } %>
+        <% if (locals.error) { %><div class="error-message"><%= error %></div><% } %>
+        
+        <form action="/settings/subscriptions" method="POST">
+            <div class="form-group form-group-checkbox" style="padding: 1rem; background: #2a2a2a; border-radius: var(--border-radius-soft);">
+                <input type="checkbox" id="isActive" name="isActive" <%= currentUser.subscriptionSettings && currentUser.subscriptionSettings.isActive ? 'checked' : '' %>>
+                <label for="isActive"><strong>Activar Suscripciones en mi perfil</strong></label>
+            </div>
+
+            <div class="form-group" style="margin-top: 2rem;">
+                <label>Elige un precio para tu suscripción mensual:</label>
+                <% 
+                const prices = [
+                    { value: 300, earning: 15000 },
+                    { value: 600, earning: 30000 },
+                    { value: 1000, earning: 50000 },
+                    { value: 1250, earning: 75000 }
+                ]; 
+                %>
+                <% prices.forEach(priceInfo => { %>
+                    <div class="radio-option">
+                        <input type="radio" id="price_<%= priceInfo.value %>" name="price" value="<%= priceInfo.value %>" <%= currentUser.subscriptionSettings && currentUser.subscriptionSettings.price === priceInfo.value ? 'checked' : '' %>>
+                        <label for="price_<%= priceInfo.value %>">
+                            <strong><%= priceInfo.value %> TPYS / mes</strong>
+                            <span class="status">
+                                Recibes <%= (priceInfo.value * CREATOR_EARNING_RATE).toFixed(0) %> TPYS 
+                                (aprox. <%= priceInfo.earning.toLocaleString('es-PY', {style:'currency', currency:'PYG'}) %>) por suscriptor.
+                            </span>
+                        </label>
+                    </div>
+                <% }) %>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Guardar Configuración</button>
+        </form>
+    </div>
+    
+    <div class="dashboard-card" style="background-color: #2a2a2a;">
+        <h3><i class="fas fa-rocket" style="color: var(--accent-color);"></i> ¿Cómo funcionan las suscripciones?</h3>
+        <p>Al activar las suscripciones, tus seguidores podrán pagarte una cuota mensual para acceder a contenido que marques como "exclusivo para suscriptores".</p>
+        <p>Recibirás el <strong><%= CREATOR_EARNING_RATE * 100 %>%</strong> de cada suscripción, que se añadirá directamente a tu saldo de TPYS.</p>
+        <hr style="border-color: #444;">
+        <h4><i class="fas fa-calculator"></i> Proyección de ganancias</h4>
+        <p>Imagina que tienes <strong>100 suscriptores</strong> con el plan de 600 TPYS:</p>
+        <p style="color: var(--success-color); font-weight: bold; font-size: 1.2rem;">Ganarías aprox. <%= (100 * 30000).toLocaleString('es-PY', {style:'currency', currency:'PYG'}) %> al mes.</p>
+        <br>
+        <p>Si llegas a <strong>1000 suscriptores</strong> con ese mismo plan:</p>
+        <p style="color: var(--success-color); font-weight: bold; font-size: 1.4rem;">¡Ganarías aprox. <%= (1000 * 30000).toLocaleString('es-PY', {style:'currency', currency:'PYG'}) %> al mes!</p>
+    </div>
+</div>
+
+<style>
+    .radio-option {
+        padding: 1rem;
+        border: 1px solid #444;
+        border-radius: var(--border-radius-soft);
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        cursor: pointer;
+    }
+    .radio-option:hover {
+        background-color: #2a2a2a;
+    }
+    .radio-option input[type="radio"] {
+        width: auto;
+    }
+    .radio-option label {
+        margin: 0;
+        cursor: pointer;
+        width: 100%;
+    }
+    .radio-option label .status {
+        color: var(--light-gray);
+        display: block;
+        font-size: 0.9rem;
+    }
+</style>
+
+<%- include('partials/footer.html') %>

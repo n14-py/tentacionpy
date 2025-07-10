@@ -5,7 +5,7 @@
 </div>
 
 <div class="dashboard-container">
-    <h2>Solicitudes de Retiro Pendientes</h2>
+    <h2>Solicitudes de Retiro</h2>
     <div style="overflow-x: auto;">
         <table class="dashboard-table">
             <thead>
@@ -13,7 +13,6 @@
                     <th>Fecha</th>
                     <th>Usuario</th>
                     <th>Monto (TPYS)</th>
-                    <th>Equivalente (Gs.)</th>
                     <th>Método</th>
                     <th>Detalles</th>
                     <th>Estado</th>
@@ -21,54 +20,68 @@
                 </tr>
             </thead>
             <tbody>
-                <% withdrawals.forEach(w => { %>
-                    <% if (w.status === 'pendiente') { %>
-                    <tr>
-                        <td><%= formatDate(w.createdAt) %></td>
-                        <td>
-    <% if (w.userId) { %>
-        <%= w.userId.username %><br><small><%= w.userId.email %></small>
-    <% } else { %>
-        <span style="color: var(--error-color);">Usuario Eliminado</span>
-    <% } %>
-</td>
-                        <td><%= w.amount.toLocaleString('es-PY') %></td>
-                        <td><%= (w.amount * 100).toLocaleString('es-PY', {style: 'currency', currency: 'PYG'}) %></td>
-                        <td><%= w.method %></td>
-                        <td>
-                            <% if(w.method === 'transferencia') { %>
-                                <strong>Banco:</strong> <%= w.details.bankName %><br>
-                                <strong>Cuenta:</strong> <%= w.details.accountNumber %><br>
-                                <strong>Tipo:</strong> <%= w.details.accountType %><br>
-                                <strong>Nombre:</strong> <%= w.details.fullName %><br>
-                                <strong>CI:</strong> <%= w.details.ci %><br>
-                                <strong>Alias:</strong> <%= w.details.alias || 'N/A' %>
-                            <% } else { %>
-                                <strong>Nombre:</strong> <%= w.details.fullName %><br>
-                                <strong>CI:</strong> <%= w.details.ci %><br>
-                                <strong>Teléfono:</strong> <%= w.details.phone %>
-                            <% } %>
-                        </td>
-                        <td><span style="color:orange; font-weight: bold;"><%= w.status %></span></td>
-                        <td>
-                            <form action="/admin/withdrawal/<%= w._id %>/complete" method="POST" style="display: inline-block; margin-bottom: 5px;">
-                                <button type="submit" class="btn btn-primary" style="background: var(--success-color);">Completado</button>
-                            </form>
-                            <form action="/admin/withdrawal/<%= w._id %>/reject" method="POST" style="display: inline-block;">
-                                <button type="submit" class="btn btn-danger">Rechazar</button>
-                            </form>
-                        </td>
-                    </tr>
-                    <% } %>
-                <% }) %>
-                 <% if (withdrawals.filter(w => w.status === 'pendiente').length === 0) { %>
-                    <tr>
-                        <td colspan="8" style="text-align: center;">No hay solicitudes de retiro pendientes.</td>
+                <% if (withdrawals && withdrawals.length > 0) { %>
+                    <% withdrawals.forEach(w => { %>
+                        <tr class="status-row-<%= w.status.toLowerCase() %>">
+                            <td><%= formatDate(w.createdAt) %></td>
+                            <td>
+                                <% if (w.userId) { %>
+                                    <strong><%= w.userId.username %></strong><br>
+                                    <small><%= w.userId.email %></small>
+                                <% } else { %>
+                                    <span style="color: var(--error-color);">Usuario Eliminado</span>
+                                <% } %>
+                            </td>
+                            <td><%= w.amount.toLocaleString('es-PY') %></td>
+                            <td><%= w.method %></td>
+                            <td>
+                                <% if(w.method === 'transferencia') { %>
+                                    <strong>Nombre:</strong> <%= w.details.fullName %><br>
+                                    <strong>CI:</strong> <%= w.details.ci %><br>
+                                    <strong>Banco:</strong> <%= w.details.bankName %><br>
+                                    <strong>Cuenta:</strong> <%= w.details.accountNumber %><br>
+                                    <% if (w.details.alias) { %>
+                                        <strong>Alias:</strong> <%= w.details.alias %>
+                                    <% } %>
+                                <% } else if (w.method === 'giro') { %>
+                                    <strong>Nombre:</strong> <%= w.details.fullName %><br>
+                                    <strong>CI:</strong> <%= w.details.ci %><br>
+                                    <strong>Teléfono:</strong> <%= w.details.phone %>
+                                <% } %>
+                            </td>
+                            <td>
+                                <span class="status-badge status-<%= w.status.toLowerCase() %>"><%= w.status %></span>
+                            </td>
+                            <td>
+                                <% if (w.status === 'Pendiente') { %>
+                                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                    <form action="/admin/withdrawal/<%= w._id %>/complete" method="POST" style="margin: 0;">
+                                        <button type="submit" class="btn btn-primary" style="background: var(--success-color); width: 100%;">Completado</button>
+                                    </form>
+                                    <form action="/admin/withdrawal/<%= w._id %>/reject" method="POST" style="margin: 0;">
+                                        <button type="submit" class="btn btn-danger" style="width: 100%;">Rechazar</button>
+                                    </form>
+                                </div>
+                                <% } else { %>
+                                    <span>-</span>
+                                <% } %>
+                            </td>
+                        </tr>
+                    <% }) %>
+                <% } else { %>
+                     <tr>
+                        <td colspan="7" style="text-align: center; padding: 2rem;">No hay solicitudes de retiro.</td>
                     </tr>
                 <% } %>
             </tbody>
         </table>
     </div>
 </div>
+
+<style>
+    .status-row-procesado { background-color: rgba(37, 211, 102, 0.05); }
+    .status-row-rechazado { background-color: rgba(244, 67, 54, 0.05); }
+    .status-row-pendiente { background-color: rgba(255, 193, 7, 0.05); }
+</style>
 
 <%- include('partials/footer.html') %>

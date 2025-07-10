@@ -1,0 +1,104 @@
+<%- include('partials/header.html') %>
+
+<style>
+    .status-badge {
+        padding: 0.3rem 0.8rem;
+        border-radius: var(--border-radius-pill);
+        font-weight: bold;
+        font-size: 0.85em;
+        text-align: center;
+        display: inline-block;
+    }
+    .status-proceso {
+        background-color: #ffc107; /* Amarillo */
+        color: #333;
+    }
+    .status-completado {
+        background-color: var(--success-color); /* Verde */
+        color: white;
+    }
+    .status-rechazado {
+        background-color: var(--error-color); /* Rojo */
+        color: white;
+    }
+    .withdrawals-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+        overflow-x: auto;
+        display: block; /* Para permitir el scroll horizontal en móvil */
+    }
+    .withdrawals-table thead, .withdrawals-table tbody, .withdrawals-table tr {
+        display: table;
+        width: 100%;
+        table-layout: fixed; /* Asegura que las columnas se distribuyan equitativamente */
+    }
+    .withdrawals-table th, .withdrawals-table td {
+        padding: 1rem 0.8rem;
+        text-align: left;
+        border-bottom: 1px solid #333;
+        vertical-align: middle;
+    }
+    .withdrawals-table th {
+        background-color: #2a2a2a;
+        font-weight: bold;
+    }
+    .no-withdrawals {
+        text-align: center;
+        padding: 3rem;
+        color: var(--light-gray);
+    }
+</style>
+
+<div class="page-header">
+    <h1>Historial de Retiros</h1>
+    <a href="/withdrawal" class="btn btn-primary"><i class="fas fa-plus"></i> Solicitar Nuevo Retiro</a>
+</div>
+
+<div class="form-container">
+    <% if(withdrawals.length > 0) { %>
+        <table class="withdrawals-table">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Monto (TPYS)</th>
+                    <th>Estado</th>
+                    <th>Detalles</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% withdrawals.forEach(w => { %>
+                    <tr>
+                        <td><%= formatDate(w.createdAt) %></td>
+                        <td><%= w.amount.toLocaleString('es-PY') %></td>
+                        <td>
+                            <% if(w.status === 'En Proceso') { %>
+                                <span class="status-badge status-proceso">En Proceso</span>
+                            <% } else if (w.status === 'Completado') { %>
+                                <span class="status-badge status-completado">Completado</span>
+                            <% } else { %>
+                                <span class="status-badge status-rechazado">Rechazado</span>
+                            <% } %>
+                        </td>
+                        <td>
+                            <% if (w.details.alias) { %>
+                                Alias: <%= w.details.alias %>
+                            <% } else { %>
+                                Banco: <%= w.details.bankName %>
+                            <% } %>
+                        </td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    <% } else { %>
+        <div class="no-withdrawals">
+            <i class="fas fa-search-dollar" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+            <h3>Aún no has solicitado ningún retiro.</h3>
+            <p>Cuando solicites un retiro, aparecerá aquí.</p>
+        </div>
+    <% } %>
+</div>
+
+
+<%- include('partials/footer.html') %>

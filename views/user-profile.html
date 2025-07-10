@@ -1,60 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil de <%= locals.userProfile ? userProfile.username : 'Usuario' %> - TentacionPY</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+
+<%# La ruta es correcta porque este archivo está en la raíz de /views %>
 <%- include('partials/header.html') %>
 
-<div class="profile-header">
-    <img src="<%= user.profilePic %>" alt="Foto de perfil de <%= user.username %>">
-    <div class="profile-info">
-        <h1><%= user.username %></h1>
-        <div class="profile-stats">
-            <span><strong><%= posts.length %></strong> publicaciones</span>
-            <a href="/user/<%= user._id %>/followers"><strong><%= user.followers.length %></strong> seguidores</a>
-            <a href="/user/<%= user._id %>/following"><strong><%= user.following.length %></strong> siguiendo</a>
+<% if (locals.userProfile) { %>
+<main class="container">
+    <div class="profile-header">
+        <div class="profile-avatar">
+            <img src="<%= userProfile.profilePic %>" alt="Foto de perfil de <%= userProfile.username %>">
         </div>
-        <p><%= user.bio %></p>
-        
-        <% if (currentUser && currentUser._id.toString() !== user._id.toString()) { %>
-            <form action="/user/<%= user._id %>/follow" method="POST">
-                <button type="submit" class="btn <%= currentUser.following.includes(user._id) ? 'btn-secondary' : 'btn-primary' %>">
-                    <%= currentUser.following.includes(user._id) ? 'Dejar de Seguir' : 'Seguir' %>
-                </button>
-            </form>
-        <% } %>
-    </div>
-</div>
+        <div class="profile-info">
+            <div class="profile-title">
+                <h1><%= userProfile.username %></h1>
+                
+                <div class="profile-actions">
+                    <% if (currentUser && !currentUser._id.equals(userProfile._id)) { %>
+                        <% 
+                           const isFollowing = currentUser.following && currentUser.following.some(id => id.equals(userProfile._id));
+                        %>
+                        <form action="/user/<%= userProfile._id %>/follow" method="POST" style="display: inline-block;">
+                            <button type="submit" class="btn <%= isFollowing ? 'btn-secondary' : 'btn-primary' %>">
+                                <%= isFollowing ? 'Siguiendo' : 'Seguir' %>
+                            </button>
+                        </form>
 
-<div class="post-grid" style="margin-top: 2rem;">
-     <% if(posts.length > 0) { %>
-        <% posts.forEach(post => { %>
-            <div class="post-card">
-                 <% if (post.type === 'image') { %>
-                    <a href="/anuncio/<%= post._id %>" class="post-image-link">
-                        <img src="<%= post.files[0] %>" alt="Anuncio" class="post-image">
-                    </a>
-                 <% } else { %>
-                    <div class="post-image-link" style="position: relative;">
-                         <video src="<%= post.files[0] %>#t=2" muted class="post-image" style="filter: blur(8px);"></video>
-                         <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; flex-direction: column; text-align: center; padding: 1rem;">
-                            <i class="fas fa-lock" style="font-size: 3rem; margin-bottom: 1rem;"></i>
-                            <h3 style="color: #fff;">Contenido Exclusivo</h3>
-                            <% if(currentUser.purchasedVideos.includes(post._id)) { %>
-                                 <a href="/post/<%= post._id %>" class="btn btn-primary">Ver Video</a>
-                            <% } else { %>
-                                 <form action="/buy-video/<%= post._id %>" method="POST">
-                                    <button type="submit" class="btn btn-primary">Comprar por <%= post.price %> TPYS</button>
-                                </form>
-                            <% } %>
-                         </div>
-                    </div>
-                 <% } %>
-                <div class="post-content">
-                    <p><%= post.description.substring(0, 80) %>...</p>
+                        <% if (isSubscribed) { %>
+                             <a href="/chat/with/<%= userProfile._id %>" class="btn btn-secondary">Enviar Mensaje</a>
+                        <% } else if (userProfile.subscriptionSettings && userProfile.subscriptionSettings.isActive) { %>
+                            <button class="btn btn-primary btn-subscribe" data-creator-id="<%= userProfile._id %>" data-price="<%= userProfile.subscriptionSettings.price %>" data-creator-name="<%= userProfile.username %>">
+                                Suscribirse por <%= userProfile.subscriptionSettings.price %> 💎
+                            </button>
+                        <% } %>
+
+                    <% } %>
                 </div>
             </div>
-        <% }) %>
-    <% } else { %>
-        <h3 style="grid-column: 1 / -1; text-align: center; color: var(--light-gray); margin-top: 3rem;">
-            <%= user.username %> aún no ha publicado nada.
-        </h3>
-    <% } %>
-</div>
+
+            <div class="profile-stats">
+                <span><strong><%= posts ? posts.length : 0 %></strong> publicaciones</span>
+                <span><strong><%= userProfile.followers ? userProfile.followers.length : 0 %></strong> seguidores</span>
+                <span><strong><%= userProfile.following ? userProfile.following.length : 0 %></strong> siguiendo</span>
+            </div>
+            
+            <% if (userProfile.bio) { %>
+                <p class="profile-bio"><%= userProfile.bio %></p>
+            <% } %>
+        </div>
+    </div>
+
+    <div class="profile-tabs">
+        <a href="#" class="tab-link active"><i class="fas fa-th"></i> PUBLICACIONES</a>
+    </div>
+
+    <div class="post-grid">
+        <% if (posts && posts.length > 0) { %>
+            <% posts.forEach(post => { %>
+                <% 
+                   const isBoosted = post.boostedUntil && new Date(post.boostedUntil) > new Date();
+                   const boostColor = (isBoosted && post.boostOptions && post.boostOptions.color) ? post.boostOptions.color : '#E91E63';
+                %>
+                <div class="post-card <%= isBoosted ? 'boosted' : '' %>" <% if (isBoosted) { %>style="--boost-color: <%= boostColor %>"<% } %>>
+                    <% if(isBoosted && post.boostOptions && post.boostOptions.label) { %>
+                        <div class="boost-label"><%= post.boostOptions.label %></div>
+                    <% } %>
+
+                    <a href="/anuncio/<%= post._id %>" class="post-card-link">
+                        <% if (post.files && post.files.length > 0) { %>
+                           <img src="<%= post.files[0] %>" alt="Post de <%= userProfile.username %>" class="post-card-image">
+                        <% } %>
+                        
+                        <% if (post.isSubscriberOnly || (post.type === 'video' && post.price > 0)) { %>
+                           <div class="content-lock-icon"><i class="fas fa-lock"></i></div>
+                        <% } %>
+
+                        <% if (post.type === 'video') { %>
+                            <div class="video-overlay"><i class="fas fa-play"></i></div>
+                        <% } %>
+                    </a>
+                    
+                    <div class="post-card-info">
+                        <div class="post-card-stats solo">
+                            <span><i class="fas fa-heart"></i> <%= post.likes ? post.likes.length : 0 %></span>
+                            <span><i class="fas fa-eye"></i> <%= post.views || 0 %></span>
+                            <span><i class="fas fa-comments"></i> <%= post.comments ? post.comments.length : 0 %></span>
+                        </div>
+                    </div>
+                </div>
+            <% }); %>
+        <% } else { %>
+            <div class="no-results-card">
+                <h3>Este usuario aún no ha publicado nada</h3>
+                <p>¡Vuelve más tarde para ver su contenido!</p>
+            </div>
+        <% } %>
+    </div>
+</main>
+<% } else { %>
+    <main class="container">
+        <div class="error-container">
+            <h2>Usuario no encontrado</h2>
+            <p>El perfil que buscas no existe o ha sido eliminado.</p>
+            <a href="/feed" class="btn btn-primary">Volver al inicio</a>
+        </div>
+    </main>
+<% } %>
 
 <%- include('partials/footer.html') %>
+
+</body>
+</html>

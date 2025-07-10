@@ -1,116 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feed - TentacionPY</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+
+<%# Esto ahora funcionará porque la ruta es relativa a la raíz de 'views' %>
 <%- include('partials/header.html') %>
 
-<div class="search-container">
-    <h2>Encuentra tu Tentación</h2>
-    <form action="/feed" method="GET" class="search-form">
-        <div class="form-group" style="flex-grow: 2;">
-            <label for="q">Palabra Clave o Zona</label>
-            <input type="text" id="q" name="q" placeholder="Ej: servicio, nombre, zona..." value="<%= query.q || '' %>">
-        </div>
-        
-        <button type="button" class="search-filters-toggle"><i class="fas fa-filter"></i> Filtros Avanzados</button>
-        
-        <div class="search-filters">
+<main class="container">
+    <div class="feed-header">
+        <h2>Encuentra tu Tentación</h2>
+        <button class="btn btn-secondary" id="advanced-search-toggle">Búsqueda Avanzada ▼</button>
+    </div>
+
+    <form action="/feed" method="GET" class="advanced-search-form" id="advanced-search-form" style="display: none;">
+        <div class="search-grid">
             <div class="form-group">
-                <label for="location">Ciudad</label>
-                <select id="location" name="location">
-                    <option value="">Todas</option>
-                    <% CITIES.forEach(city => { %>
-                        <option value="<%= city %>" <%= query.location === city ? 'selected' : '' %>><%= city %></option>
-                    <% }) %>
-                </select>
+                <label for="q">Buscar por palabra clave</label>
+                <input type="text" name="q" id="q" class="form-control" placeholder="Ej: tatuajes, show..." value="<%= (locals.query && query.q) || '' %>">
             </div>
             <div class="form-group">
                 <label for="category">Categoría</label>
-                <select id="category" name="category">
+                <select name="category" id="category" class="form-control">
                     <option value="">Todas</option>
-                    <% CATEGORIES.forEach(cat => { %>
-                        <option value="<%= cat %>" <%= query.category === cat ? 'selected' : '' %>><%= cat %></option>
-                    <% }) %>
+                    <% if (locals.CATEGORIES) { %>
+                        <% CATEGORIES.forEach(cat => { %>
+                            <option value="<%= cat %>" <%= (locals.query && query.category === cat) ? 'selected' : '' %>><%= cat %></option>
+                        <% }); %>
+                    <% } %>
                 </select>
             </div>
             <div class="form-group">
                 <label for="gender">Género</label>
-                <select id="gender" name="gender">
+                <select name="gender" id="gender" class="form-control">
                     <option value="">Todos</option>
-                    <option value="Mujer" <%= query.gender === 'Mujer' ? 'selected' : '' %>>Mujer</option>
-                    <option value="Hombre" <%= query.gender === 'Hombre' ? 'selected' : '' %>>Hombre</option>
-                    <option value="Trans" <%= query.gender === 'Trans' ? 'selected' : '' %>>Trans</option>
+                    <option value="Mujer" <%= (locals.query && query.gender === 'Mujer') ? 'selected' : '' %>>Mujer</option>
+                    <option value="Hombre" <%= (locals.query && query.gender === 'Hombre') ? 'selected' : '' %>>Hombre</option>
+                    <option value="Trans" <%= (locals.query && query.gender === 'Trans') ? 'selected' : '' %>>Trans</option>
                 </select>
             </div>
-             <div class="form-group">
-                <label for="contentType">Contenido</label>
-                <select id="contentType" name="contentType">
-                    <option value="">Todo</option>
-                    <option value="image" <%= query.contentType === 'image' ? 'selected' : '' %>>Solo Anuncios (Fotos)</option>
-                    <option value="video" <%= query.contentType === 'video' ? 'selected' : '' %>>Solo Videos</option>
+            <div class="form-group">
+                <label for="location">Ubicación</label>
+                <select name="location" id="location" class="form-control">
+                    <option value="">Todas</option>
+                     <% if (locals.CITIES) { %>
+                        <% CITIES.forEach(city => { %>
+                            <option value="<%= city %>" <%= (locals.query && query.location === city) ? 'selected' : '' %>><%= city %></option>
+                        <% }); %>
+                    <% } %>
                 </select>
             </div>
         </div>
-        
-        <button type="submit" class="btn btn-primary">Buscar</button>
+        <div class="search-actions">
+            <a href="/feed" class="btn btn-secondary">Limpiar Filtros</a>
+            <button type="submit" class="btn btn-primary">Aplicar Filtros</button>
+        </div>
     </form>
-</div>
 
-<div class="post-grid">
-    <% if(posts.length > 0) { %>
-        <% posts.forEach(post => { %>
-            <div class="post-card <%= post.boostedUntil && new Date(post.boostedUntil) > new Date() ? 'post-card--boosted' : '' %>" style="--boost-color: <%= post.boostOptions.color %>">
-                <% if(post.boostedUntil && new Date(post.boostedUntil) > new Date()) { %><div class="boost-badge"><%= post.boostOptions.emoji %> Viral</div><% } %>
-                <% if(post.files.length > 1) { %>
-                    <div class="multi-photo-badge"><i class="fas fa-images"></i> <%= post.files.length %></div>
-                <% } %>
+    <div class="post-grid">
+        <% if (posts && posts.length > 0) { %>
+            <% posts.forEach(post => { %>
+                <% 
+                   const isBoosted = post.boostedUntil && new Date(post.boostedUntil) > new Date();
+                   const boostColor = (isBoosted && post.boostOptions && post.boostOptions.color) ? post.boostOptions.color : '#E91E63';
+                   const boostLabel = (isBoosted && post.boostOptions && post.boostOptions.label) ? post.boostOptions.label : '';
+                %>
                 
-                <% if (post.type === 'image') { %>
-                    <a href="/anuncio/<%= post._id %>" class="post-image-link">
-                        <img src="<%= post.files[0] %>" alt="Anuncio" class="post-image">
-                    </a>
-                <% } else { %>
-                    <div class="post-image-link" style="position: relative;">
-                         <video src="<%= post.files[0] %>#t=2" muted class="post-image" style="filter: blur(8px);"></video>
-                         <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; flex-direction: column; text-align: center; padding: 1rem;">
-                            <i class="fas fa-lock" style="font-size: 2.5rem; margin-bottom: 1rem;"></i>
-                            <h3 style="color: #fff; font-size: 1.2rem;">Contenido Exclusivo</h3>
-                            <% if(currentUser && currentUser.purchasedVideos.includes(post._id)) { %>
-                                 <a href="/post/<%= post._id %>" class="btn btn-primary">Ver Video</a>
-                            <% } else { %>
-                                 <form action="/buy-video/<%= post._id %>" method="POST" style="margin-top: 1rem;">
-                                    <button type="submit" class="btn btn-primary">Comprar por <%= post.price %> TPYS</button>
-                                </form>
-                            <% } %>
-                         </div>
-                    </div>
-                <% } %>
+                <div class="post-card <%= isBoosted ? 'boosted' : '' %>" <% if (isBoosted) { %>style="--boost-color: <%= boostColor %>"<% } %>>
+                    
+                    <% if(isBoosted && boostLabel) { %>
+                        <div class="boost-label"><%= boostLabel %></div>
+                    <% } %>
 
-                <div class="post-content">
-                    <div class="post-header">
-                        <a href="/user/<%= post.userId._id %>">
-                            <img src="<%= post.userId.profilePic %>" alt="Foto de perfil">
-                        </a>
-                        <div>
-                             <a href="/user/<%= post.userId._id %>" class="username-link"><%= post.userId.username %></a>
-                             <div class="user-tags"><%= post.userId.location %></div>
+                    <a href="/anuncio/<%= post._id %>" class="post-card-link">
+                        <% if (post.files && post.files.length > 0) { %>
+                           <img src="<%= post.files[0] %>" alt="Post de <%= (post.userId && post.userId.username) || 'Usuario' %>" class="post-card-image">
+                        <% } else { %>
+                           <img src="/img/placeholder.png" alt="Imagen no disponible" class="post-card-image">
+                        <% } %>
+                        
+                        <% if (post.isSubscriberOnly || (post.type === 'video' && post.price > 0)) { %>
+                           <div class="content-lock-icon"><i class="fas fa-lock"></i></div>
+                        <% } %>
+
+                        <% if (post.type === 'video') { %>
+                            <div class="video-overlay"><i class="fas fa-play"></i></div>
+                        <% } %>
+                    </a>
+                    
+                    <div class="post-card-info">
+                        <% if (post.userId) { %>
+                            <a href="/user/<%= post.userId.username %>" class="post-card-user">
+                                <img src="<%= post.userId.profilePic %>" alt="<%= post.userId.username %>" class="avatar">
+                                <span><%= post.userId.username %></span>
+                            </a>
+                        <% } %>
+                        <div class="post-card-stats">
+                            <span><i class="fas fa-heart"></i> <%= post.likes ? post.likes.length : 0 %></span>
+                            <span><i class="fas fa-eye"></i> <%= post.views || 0 %></span>
                         </div>
                     </div>
-                     <div class="post-actions">
-                        <% if (currentUser) { %>
-                        <button class="like-button <%= post.likes.includes(currentUser._id) ? 'liked' : '' %>" data-post-id="<%= post._id %>">
-                            <i class="fa-heart <%= post.likes.includes(currentUser._id) ? 'fas' : 'far' %>"></i> 
-                            <span class="like-count"><%= post.likes.length %></span>
-                        </button>
-                        <% } else { %>
-                            <span class="like-button" style="cursor: default;">
-                                <i class="far fa-heart"></i>
-                                <span class="like-count"><%= post.likes.length %></span>
-                            </span>
-                        <% } %>
-                    </div>
                 </div>
+            <% }); %>
+        <% } else { %>
+            <div class="no-results-card">
+                <h3>No se encontraron resultados</h3>
+                <p>Prueba a cambiar los filtros o a realizar una nueva búsqueda.</p>
+                <a href="/feed" class="btn btn-primary">Ver todos los anuncios</a>
             </div>
-        <% }) %>
-    <% } else { %>
-        <h3 style="grid-column: 1 / -1; text-align: center; color: var(--light-gray); margin-top: 3rem;">No se encontraron resultados. Intenta con otros filtros.</h3>
-    <% } %>
-</div>
+        <% } %>
+    </div>
+</main>
 
+<%# Esto ahora funcionará porque la ruta es relativa a la raíz de 'views' %>
 <%- include('partials/footer.html') %>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const toggleButton = document.getElementById('advanced-search-toggle');
+        const searchForm = document.getElementById('advanced-search-form');
+        
+        if(toggleButton && searchForm) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const hasFilter = urlParams.get('q') || urlParams.get('category') || urlParams.get('gender') || urlParams.get('location');
+            if (hasFilter) {
+                 searchForm.style.display = 'block';
+                 toggleButton.innerHTML = 'Búsqueda Avanzada ▲';
+            }
+
+            toggleButton.addEventListener('click', () => {
+                const isHidden = searchForm.style.display === 'none';
+                searchForm.style.display = isHidden ? 'block' : 'none';
+                toggleButton.innerHTML = isHidden ? 'Búsqueda Avanzada ▲' : 'Búsqueda Avanzada ▼';
+            });
+        }
+    });
+</script>
+
+</body>
+</html>

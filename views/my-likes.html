@@ -6,10 +6,10 @@
 </div>
 
 <div class="post-grid">
-    <% if(posts && posts.length > 0) { %>
+    <% if(typeof posts !== 'undefined' && posts.length > 0) { %>
         <% posts.forEach(post => { %>
             <div class="post-card">
-                <a href="/anuncio/<%= post._id %>" class="post-image-link">
+                <a href="<%= post.type === 'image' ? `/anuncio/${post._id}` : `/post/${post._id}` %>" class="post-image-link">
                     <% if (post.type === 'image') { %>
                         <img src="<%= post.files[0] %>" alt="Anuncio" class="post-image">
                     <% } else { %>
@@ -19,7 +19,7 @@
                 <div class="post-content">
                     <div class="post-header">
                         <a href="/user/<%= post.userId._id %>">
-                           <img src="<%= post.userId.profilePic %>" alt="Foto de perfil">
+                           <img src="<%= post.userId.profilePic %>" alt="Foto de perfil de <%= post.userId.username %>">
                         </a>
                         <div>
                              <a href="/user/<%= post.userId._id %>" class="username-link"><%= post.userId.username %></a>
@@ -31,7 +31,7 @@
         <% }) %>
     <% } else { %>
         <h3 style="grid-column: 1 / -1; text-align: center; color: var(--light-gray); margin-top: 3rem;">
-            Todavía no te ha gustado ninguna publicación.
+            Todavía no te ha gustado ninguna publicación. ¡Explora el <a href="/feed">feed</a> y muestra un poco de amor!
         </h3>
     <% } %>
 </div>

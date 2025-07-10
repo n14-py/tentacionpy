@@ -1,179 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= locals.post && post.description ? post.description.slice(0, 30) : 'Anuncio' %>... - TentacionPY</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/viewerjs/1.10.1/viewer.min.css">
+</head>
+<body>
+
+<%# La ruta es correcta porque este archivo está en la raíz de /views %>
 <%- include('partials/header.html') %>
 
-<div class="page-header">
-    <h1>Detalles del Anuncio</h1>
-    <a href="/feed" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver al Feed</a>
-</div>
+<main class="container">
+    <% if (locals.post) { %>
+        <div class="anuncio-container">
+            <div class="anuncio-media">
+                <% if (canView) { %>
+                    <% if (post.type === 'image') { %>
+                        <div id="image-gallery">
+                            <% if (post.files && post.files.length > 0) { %>
+                                <% post.files.forEach(file => { %>
+                                    <img src="<%= file %>" alt="Imagen del anuncio <%= post.description ? post.description.slice(0, 20) : '' %>">
+                                <% }); %>
+                            <% } %>
+                        </div>
+                    <% } else { %>
+                        <% if (post.files && post.files.length > 0) { %>
+                            <video src="<%= post.files[0] %>" controls controlsList="nodownload" class="main-video"></video>
+                        <% } %>
+                    <% } %>
+                <% } else { %>
+                    <% 
+                       let backgroundStyleAttr = '';
+                       if (post.files && post.files.length > 0) {
+                           const blurredImageUrl = post.files[0].replace('/upload/', '/upload/e_blur:1000/');
+                           backgroundStyleAttr = `style="background-image: url('${blurredImageUrl}');"`;
+                       }
+                    %>
+                    <div class="content-lock" <%- backgroundStyleAttr %>>
+                        <div class="lock-overlay">
+                            <i class="fas fa-lock"></i>
+                            <h3>Contenido Exclusivo</h3>
+                            <% if (post.isSubscriberOnly) { %>
+                                <p>Este video es solo para suscriptores de <strong><%= post.userId.username %></strong>.</p>
+                                <p>Suscríbete por <strong><%= post.userId.subscriptionSettings.price %> 💎</strong> al mes.</p>
+                                <button class="btn btn-primary btn-subscribe" data-creator-id="<%= post.userId._id %>" data-price="<%= post.userId.subscriptionSettings.price %>" data-creator-name="<%= post.userId.username %>">Suscribirme</button>
+                            <% } else { %>
+                                <p>Compra este video por <strong><%= post.price %> 💎</strong> para verlo.</p>
+                                <button class="btn btn-primary btn-buy-video" data-post-id="<%= post._id %>" data-price="<%= post.price %>">Comprar Video</button>
+                            <% } %>
+                            <% if (currentUser) { %>
+                               <a href="/add-funds" class="link-recharge">o recarga TPYS aquí</a>
+                            <% } else { %>
+                                <a href="/login" class="link-recharge">Inicia sesión para comprar</a>
+                            <% } %>
+                        </div>
+                    </div>
+                <% } %>
+            </div>
 
-<div class="anuncio-detail-container">
-    <div class="photo-gallery">
-        <div class="main-photo-container">
-            <% if (post.files && post.files.length > 0) { %>
-                <img src="<%= post.files[0] %>" alt="<%= post.description %>" id="main-photo">
-            <% } %>
-        </div>
-        <% if (post.files && post.files.length > 1) { %>
-        <div class="thumbnails-container">
-            <% post.files.forEach((file, index) => { %>
-                <img src="<%= file %>" alt="Thumbnail <%= index + 1 %>" class="thumbnail <%= index === 0 ? 'active' : '' %>">
-            <% }) %>
-        </div>
-        <% } %>
-    </div>
-    <div class="anuncio-info">
-        <div class="anuncion-info user-link-container" style="background: var(--primary-color); padding: 1rem; border-radius: var(--border-radius-soft); margin-bottom: 2rem;">
-             <a href="/user/<%= post.userId._id %>" class="user-link">
-                <img src="<%= post.userId.profilePic %>" alt="<%= post.userId.username %>">
-                <h2><%= post.userId.username %></h2>
-            </a>
-            <p style="margin-bottom: 1rem;"><%= post.userId.bio.substring(0, 100) %>...</p>
-            <% if (currentUser && currentUser._id.toString() !== post.userId._id.toString()) { %>
-            <form action="/user/<%= post.userId._id %>/follow" method="POST">
-                <button type="submit" class="btn <%= currentUser.following.includes(post.userId._id) ? 'btn-secondary' : 'btn-primary' %>" style="width: 100%;">
-                    <%= currentUser.following.includes(post.userId._id) ? 'Dejar de Seguir' : 'Seguir' %>
-                </button>
-            </form>
-            <% } %>
-        </div>
+            <div class="anuncio-info">
+                <div class="anuncio-header">
+                    <% if (post.userId) { %>
+                        <a href="/user/<%= post.userId.username %>" class="user-info">
+                            <img src="<%= post.userId.profilePic %>" alt="Avatar de <%= post.userId.username %>" class="avatar-lg">
+                            <div>
+                                <h3><%= post.userId.username %></h3>
+                                <p class="location"><i class="fas fa-map-marker-alt"></i> <%= post.userId.location %></p>
+                            </div>
+                        </a>
+                    <% } %>
+                    <div class="anuncio-actions">
+                        <button class="btn-like <%= (currentUser && currentUser.likedPosts && currentUser.likedPosts.includes(post._id)) ? 'liked' : '' %>" data-post-id="<%= post._id %>">
+                            <i class="fas fa-heart"></i> <span id="like-count"><%= post.likes ? post.likes.length : 0 %></span>
+                        </button>
+                    </div>
+                </div>
 
-        <div class="post-stats">
-            <span class="stat-item"><i class="fas fa-eye"></i> <%= post.views %> Vistas</span>
-            <span class="stat-item"><i class="fas fa-heart"></i> <%= post.likes.length %> Likes</span>
-            <span class="stat-item"><i class="fas fa-comments"></i> <%= post.comments.length %> Comentarios</span>
-        </div>
-        
-        <div class="post-actions" style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
-            <button class="like-button <%= currentUser && post.likes.includes(currentUser._id) ? 'liked' : '' %>" data-post-id="<%= post._id %>">
-                <i class="fa-heart <%= currentUser && post.likes.includes(currentUser._id) ? 'fas' : 'far' %>"></i> 
-                <span class="like-count"><%= post.likes.length %></span>
-            </button>
-             <% if(currentUser && post.userId._id.equals(currentUser._id)) { %>
-                <a href="/post/<%= post._id %>/edit" class="btn btn-secondary"><i class="fas fa-edit"></i></a>
-                <button type="button" class="btn btn-danger confirm-action-btn" 
-                    data-message="¿Estás seguro de que quieres borrar esta publicación? Esta acción es permanente." 
-                    data-action="/post/<%= post._id %>/delete">
-                    <i class="fas fa-trash"></i>
-                </button>
-            <% } %>
-            <a href="https://api.whatsapp.com/send?text=¡Mira este anuncio en TentacionPY! <%= process.env.BASE_URL %>/anuncio/<%= post._id %>" class="btn btn-success" target="_blank"><i class="fab fa-whatsapp"></i></a>
-        </div>
+                <p class="description"><%= post.description %></p>
 
-        <div class="info-section">
-            <h3>Descripción</h3>
-            <p><%= post.description %></p>
-        </div>
+                <% if (post.tags && post.tags.length > 0) { %>
+                    <div class="tags-container">
+                        <% post.tags.forEach(tag => { %>
+                            <span class="tag"><%= tag %></span>
+                        <% }); %>
+                    </div>
+                <% } %>
 
-        <% if(post.tags && post.tags.length > 0 && post.tags[0] !== '') { %>
-        <div class="info-section">
-            <h3>Tags</h3>
-            <ul class="tags-list">
-                <% post.tags.forEach(tag => { %>
-                    <li>#<%= tag %></li>
-                <% }) %>
-            </ul>
-        </div>
-        <% } %>
-        
-        <% if(post.services && post.services.length > 0 && post.services[0] !== '') { %>
-        <div class="info-section">
-            <h3>Servicios Incluidos</h3>
-            <ul class="services-list">
-                <% post.services.forEach(service => { %>
-                    <li><%= service %></li>
-                <% }) %>
-            </ul>
-        </div>
-        <% } %>
+                <% if (post.type === 'image') { %>
+                    <div class="details-section">
+                        <h4>Detalles del Anuncio</h4>
+                        <ul>
+                            <li><strong><i class="fas fa-tag"></i> Categoría:</strong> <%= post.category || 'No especificada' %></li>
+                            <li><strong><i class="fas fa-concierge-bell"></i> Servicios:</strong> <%= post.services ? post.services.join(', ') : 'No especificados' %></li>
+                            <li><strong><i class="fas fa-money-bill-wave"></i> Tarifa:</strong> <%= post.rate || 'No especificada' %></li>
+                            <li><strong><i class="fas fa-map-marked-alt"></i> Zona:</strong> <%= post.address || 'No especificada' %></li>
+                            <% if (post.whatsapp) { %>
+                               <li><strong><i class="fab fa-whatsapp"></i> Contacto:</strong> <a href="https://wa.me/<%= post.whatsapp.replace(/\D/g,'') %>" target="_blank"><%= post.whatsapp %></a></li>
+                            <% } %>
+                        </ul>
+                    </div>
+                <% } %>
 
-        <% if(post.rate) { %>
-        <div class="info-section">
-            <h3>Tarifa</h3>
-            <div class="rate-box">
-                <%= post.rate %>
+                <% if (currentUser && isOwner) { %>
+                    <div class="owner-actions">
+                        <h4>Gestionar Anuncio</h4>
+                        <% if (post.boostedUntil && new Date(post.boostedUntil) > new Date()) { %>
+                            <div class="alert alert-success">
+                                🚀 Anuncio promocionado hasta el <%= new Date(post.boostedUntil).toLocaleString('es-PY') %>.
+                            </div>
+                        <% } else { %>
+                            <button class="btn btn-primary btn-block" id="boost-post-btn">🚀 Promocionar Anuncio</button>
+                        <% } %>
+                        <hr>
+                        <button class="btn btn-danger btn-block btn-delete-post" data-post-id="<%= post._id %>">🗑️ Eliminar Anuncio</button>
+                    </div>
+                <% } %>
+
+                <div class="comments-section">
+                    <h4>Comentarios (<span id="comment-count"><%= post.comments ? post.comments.length : 0 %></span>)</h4>
+                    <% if (currentUser) { %>
+                        <form id="comment-form" data-post-id="<%= post._id %>">
+                            <textarea name="text" placeholder="Escribe un comentario..." required></textarea>
+                            <div class="comment-actions">
+                                 <div class="donation-input">
+                                    <label for="donationAmount">Donar:</label>
+                                    <input type="number" name="donationAmount" min="0" placeholder="0">
+                                    <span>💎</span>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Comentar</button>
+                            </div>
+                        </form>
+                    <% } else { %>
+                        <p><a href="/login">Inicia sesión</a> para dejar un comentario.</p>
+                    <% } %>
+                    <div id="comments-list">
+                        <% if (post.comments && post.comments.length > 0) { %>
+                            <% post.comments.slice().reverse().forEach(comment => { %>
+                                <% if (comment.userId) { %>
+                                    <div class="comment">
+                                        <img src="<%= comment.userId.profilePic %>" alt="avatar" class="avatar">
+                                        <div class="comment-body">
+                                            <strong><%= comment.userId.username %></strong>
+                                            <p><%= comment.text %></p>
+                                            <% if(comment.donation && comment.donation.amount > 0) { %>
+                                                <span class="donation-badge">Donó <%= comment.donation.amount %> 💎</span>
+                                            <% } %>
+                                        </div>
+                                    </div>
+                                <% } %>
+                            <% }); %>
+                        <% } %>
+                    </div>
+                </div>
             </div>
         </div>
-        <% } %>
-
-        <% const contactNumber = post.whatsapp || post.userId.whatsapp; %>
-        <% if(contactNumber) { %>
-        <div class="whatsapp-button-container">
-            <a href="https://wa.me/<%= contactNumber.replace(/\D/g, '') %>" target="_blank" class="btn btn-whatsapp" style="width: 100%;">
-                <i class="fab fa-whatsapp"></i> Contactar por WhatsApp
-            </a>
+    <% } else { %>
+        <div class="error-container">
+            <h2>Anuncio no encontrado</h2>
+            <p>El anuncio que buscas no existe o ha sido eliminado.</p>
+            <a href="/feed" class="btn btn-primary">Volver al inicio</a>
         </div>
-        <% } %>
-        
-        <hr>
+    <% } %>
+</main>
 
-        <div class="comments-section">
-            <h3>Comentarios</h3>
-            <% if (currentUser) { %>
-                <form id="comment-form" class="comment-form">
-                    <img src="<%= currentUser.profilePic %>" alt="Tu perfil">
-                    <textarea name="text" placeholder="Añade un comentario..." required></textarea>
-                    <button type="submit" class="btn btn-primary">Enviar</button>
-                </form>
-            <% } else { %>
-                <p><a href="/login">Inicia sesión</a> para dejar un comentario.</p>
-            <% } %>
-
-            <ul id="comment-list" class="comment-list">
-                <% post.comments.slice().reverse().forEach(comment => { %>
-                    <li class="comment-item">
-                        <a href="/user/<%= comment.userId._id %>"><img src="<%= comment.userId.profilePic %>" alt="<%= comment.userId.username %>"></a>
-                        <div class="comment-content">
-                            <div class="comment-header">
-                                <a href="/user/<%= comment.userId._id %>" class="username"><%= comment.userId.username %></a>
-                                <span class="timestamp"><%= formatDate(comment.createdAt) %></span>
-                            </div>
-                            <p class="comment-text"><%= comment.text %></p>
-                        </div>
-                    </li>
-                <% }) %>
-            </ul>
-        </div>
-    </div>
-</div>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/viewerjs/1.10.1/viewer.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
+        const galleryElement = document.getElementById('image-gallery');
+        if (galleryElement) {
+            try { new Viewer(galleryElement); } catch (e) { console.error('ViewerJS error:', e); }
+        }
+
         const commentForm = document.getElementById('comment-form');
         if(commentForm) {
-            commentForm.addEventListener('submit', function(e) {
+            commentForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const text = this.querySelector('textarea').value;
-                if (!text.trim()) return;
+                const form = e.target;
+                const postId = form.dataset.postId;
+                const text = form.elements.text.value;
+                const donationAmount = form.elements.donationAmount.value;
+                const submitButton = form.querySelector('button[type="submit"]');
 
-                fetch('/post/<%= post._id %>/comments', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text })
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        const commentList = document.getElementById('comment-list');
-                        const newComment = document.createElement('li');
-                        newComment.classList.add('comment-item');
-                        newComment.innerHTML = `
-                            <a href="/user/${data.comment.userId._id}"><img src="${data.comment.userId.profilePic}" alt="${data.comment.userId.username}"></a>
-                            <div class="comment-content">
-                                <div class="comment-header">
-                                    <a href="/user/${data.comment.userId._id}" class="username">${data.comment.userId.username}</a>
-                                    <span class="timestamp">Ahora</span>
-                                </div>
-                                <p class="comment-text">${data.comment.text}</p>
-                            </div>
-                        `;
-                        commentList.prepend(newComment);
-                        this.querySelector('textarea').value = '';
-                    } else {
-                        alert(data.message);
+                submitButton.disabled = true;
+                submitButton.textContent = 'Enviando...';
+
+                try {
+                    const response = await fetch(`/post/${postId}/comments`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text, donationAmount })
+                    });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.message || 'Error en el servidor');
+                    
+                    const list = document.getElementById('comments-list');
+                    const newComment = document.createElement('div');
+                    newComment.className = 'comment';
+                    let donationHTML = '';
+                    if(data.comment.donation && data.comment.donation.amount > 0) {
+                        donationHTML = `<span class="donation-badge">Donó ${data.comment.donation.amount} 💎</span>`;
                     }
-                });
+                    newComment.innerHTML = `
+                        <img src="${data.comment.userId.profilePic}" alt="avatar" class="avatar">
+                        <div class="comment-body">
+                            <strong>${data.comment.userId.username}</strong>
+                            <p>${data.comment.text}</p>
+                            ${donationHTML}
+                        </div>`;
+                    list.prepend(newComment);
+                    form.reset();
+                    
+                    const countSpan = document.getElementById('comment-count');
+                    countSpan.textContent = parseInt(countSpan.textContent) + 1;
+                } catch (error) {
+                    alert('Error al publicar comentario: ' + error.message);
+                } finally {
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Comentar';
+                }
             });
         }
     });
 </script>
 
 <%- include('partials/footer.html') %>
+
+</body>
+</html>

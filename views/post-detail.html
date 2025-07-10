@@ -2,17 +2,21 @@
 
 <div class="page-header">
     <h1>Viendo Video</h1>
-    <a href="/my-videos" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Mis Videos</a>
+    <a href="/my-videos" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver a Mis Videos</a>
 </div>
 
 <div class="anuncio-detail-container">
     <div class="photo-gallery">
         <div class="main-photo-container">
-            <video src="<%= post.files[0] %>" controls style="width: 100%; border-radius: var(--border-radius-soft);"></video>
+            <div class="video-container" style="position: relative;">
+                 <video src="<%= post.files[0] %>" controls controlslist="nodownload" oncontextmenu="return false;" style="width: 100%; border-radius: var(--border-radius-soft);"></video>
+                 <div class="video-security-overlay"></div>
+            </div>
         </div>
     </div>
+
     <div class="anuncio-info">
-        <div class="anuncion-info user-link-container">
+        <div class="user-link-container">
              <a href="/user/<%= post.userId._id %>" class="user-link">
                 <img src="<%= post.userId.profilePic %>" alt="<%= post.userId.username %>">
                 <h2><%= post.userId.username %></h2>
@@ -34,22 +38,39 @@
 
         <div class="comments-section">
             <h3>Comentarios</h3>
-            <form id="comment-form" class="comment-form">
-                <img src="<%= currentUser.profilePic %>" alt="Tu perfil">
-                <textarea name="text" placeholder="Añade un comentario..." required></textarea>
-                <button type="submit" class="btn btn-primary">Enviar</button>
-            </form>
+            <% if (currentUser) { %>
+                <form id="comment-form" class="comment-form" data-post-id="<%= post._id %>">
+                    <img src="<%= currentUser.profilePic %>" alt="Tu perfil">
+                    <div class="comment-input-area">
+                        <textarea name="text" placeholder="Añade un comentario..." required></textarea>
+                        <div class="comment-actions">
+                            <div class="donation-area" title="Dona TPYS para que tu comentario destaque">
+                                <img src="/img/tpys-coin.png" class="coin-icon" alt="TPYS">
+                                <input type="number" name="donationAmount" placeholder="Donar TPYS" min="10" step="10">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Enviar</button>
+                        </div>
+                    </div>
+                </form>
+            <% } else { %>
+                <p><a href="/login">Inicia sesión</a> para dejar un comentario.</p>
+            <% } %>
 
             <ul id="comment-list" class="comment-list">
-                 <% post.comments.slice().reverse().forEach(comment => { %>
-                    <li class="comment-item">
+                <% post.comments.slice().reverse().forEach(comment => { %>
+                    <li class="comment-item <%= comment.donation ? 'comment-item--donated' : '' %>">
                         <a href="/user/<%= comment.userId._id %>"><img src="<%= comment.userId.profilePic %>" alt="<%= comment.userId.username %>"></a>
                         <div class="comment-content">
                             <div class="comment-header">
                                 <a href="/user/<%= comment.userId._id %>" class="username"><%= comment.userId.username %></a>
                                 <span class="timestamp"><%= formatDate(comment.createdAt) %></span>
                             </div>
-                            <p class="comment-text"><%= comment.text %></p>
+                            <p class="comment-text"><%- comment.text.replace(/\n/g, '<br>') %></p>
+                            <% if (comment.donation) { %>
+                                <div class="donation-receipt">
+                                    Donó <img src="/img/tpys-coin.png" class="coin-icon-small"> <strong><%= comment.donation.amount %> TPYS</strong>
+                                </div>
+                            <% } %>
                         </div>
                     </li>
                 <% }) %>
@@ -57,48 +78,5 @@
         </div>
     </div>
 </div>
-
-<script>
- // La misma lógica de comentarios que en anuncio-detail.html
- document.addEventListener('DOMContentLoaded', () => {
-    const commentForm = document.getElementById('comment-form');
-    if(commentForm) {
-        commentForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const text = this.querySelector('textarea').value;
-            if (!text.trim()) return;
-
-            fetch('/post/<%= post._id %>/comments', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    const commentList = document.getElementById('comment-list');
-                    const newComment = document.createElement('li');
-                    newComment.classList.add('comment-item');
-                    newComment.innerHTML = `
-                        <a href="/user/${data.comment.userId._id}"><img src="${data.comment.userId.profilePic}" alt="${data.comment.userId.username}"></a>
-                        <div class="comment-content">
-                            <div class="comment-header">
-                                <a href="/user/${data.comment.userId._id}" class="username">${data.comment.userId.username}</a>
-                                <span class="timestamp">Ahora</span>
-                            </div>
-                            <p class="comment-text">${data.comment.text}</p>
-                        </div>
-                    `;
-                    commentList.prepend(newComment);
-                    this.querySelector('textarea').value = '';
-                } else {
-                    alert(data.message);
-                }
-            });
-        });
-    }
-});
-</script>
-
 
 <%- include('partials/footer.html') %>

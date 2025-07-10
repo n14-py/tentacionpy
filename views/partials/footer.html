@@ -1,49 +1,26 @@
-</main>
+<footer class="main-footer">
+    <div class="container text-center">
+        <p>&copy; <%= new Date().getFullYear() %> TentacionPY. Todos los derechos reservados.</p>
+        <p><a href="/terms">Términos y Condiciones</a> | <a href="/payout-info">Información de Pagos</a></p>
+    </div>
+</footer>
 
-<% if (locals.currentUser) { %>
-<div class="fab-container">
-    <a href="/new-post" class="btn btn-primary fab" title="Crear Nuevo Post">
-        <i class="fas fa-plus"></i>
-    </a>
-</div>
-
-<nav class="bottom-nav">
-    <a href="/feed" class="nav-link"><i class="fas fa-home"></i><span>Inicio</span></a>
-    <a href="/my-videos" class="nav-link"><i class="fas fa-play-circle"></i><span>Mis Videos</span></a>
-    <a href="/new-post" class="nav-link nav-link--post"><i class="fas fa-plus"></i></a>
-    <a href="/dashboard" class="nav-link"><i class="fas fa-chart-line"></i><span>Panel</span></a>
-    <a href="/profile" class="nav-link"><i class="fas fa-user"></i><span>Perfil</span></a>
-</nav>
-
-<% } %>
-
-<% if (!locals.currentUser) { %>
-<div id="age-verification-modal" class="age-verification-modal">
+<div id="confirmationModal" class="modal">
     <div class="modal-content">
-        <h2>¿Eres mayor de 18 años?</h2>
-        <p>Debes ser mayor de edad para ingresar y ver el contenido de TentacionPY.</p>
-        <div class="modal-buttons">
-            <button id="age-no" class="btn btn-secondary">No, salir</button>
-            <button id="age-yes" class="btn btn-primary">Sí, tengo 18 o más</button>
-        </div>
-    </div>
-</div>
-<% } %>
-
-<div id="confirmation-modal" class="age-verification-modal">
-     <div class="modal-content">
-        <h2 id="confirmation-title">¿Estás seguro?</h2>
-        <p id="confirmation-message">Esta acción no se puede deshacer.</p>
-        <div class="modal-buttons">
-            <button id="cancel-btn" class="btn btn-secondary">Cancelar</button>
-            <form id="confirm-form" method="POST" style="display: contents;">
-                 <button type="submit" class="btn btn-danger">Confirmar</button>
-            </form>
+        <span class="close-button">&times;</span>
+        <h3 id="modalTitle">Confirmar Acción</h3>
+        <p id="modalMessage">¿Estás seguro?</p>
+        <div id="modal-additional-content"></div>
+        <p id="modalBalanceInfo" class="balance-info"></p>
+        <p class="refund-notice">Esta acción no es reembolsable.</p>
+        <div class="modal-actions">
+            <button id="modalCancelBtn" class="btn btn-secondary">Cancelar</button>
+            <button id="modalConfirmBtn" class="btn btn-danger">Confirmar</button>
         </div>
     </div>
 </div>
 
+<script src="https://kit.fontawesome.com/1a788d3463.js" crossorigin="anonymous"></script>
 <script src="/js/main.js"></script>
-
 </body>
 </html>

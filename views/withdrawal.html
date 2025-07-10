@@ -2,39 +2,43 @@
 
 <div class="page-header">
     <h1>Retirar Fondos</h1>
-    <a href="/dashboard" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver al Panel</a>
+    <div style="display: flex; gap: 1rem;">
+        <a href="/withdrawal-status" class="btn btn-secondary">Ver Historial</a>
+        <a href="/dashboard" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver al Panel</a>
+    </div>
 </div>
 
 <div class="form-container">
     <h2>Tu Saldo Retirable: <span style="color: var(--accent-color)"><%= currentUser.tpysBalance.toFixed(0) %> TPYS</span></h2>
-    <p>Completa el formulario para solicitar un retiro. El monto mínimo es de 50,000 TPYS.</p>
+    <p>Completa el formulario para solicitar un retiro. El monto mínimo es de 300 TPYS y el pago puede tardar hasta 3 días hábiles en ser procesado.</p>
     
-    <% if (success) { %>
+    <% if (locals.success) { %>
         <div class="success-message"><%= success %></div>
     <% } %>
-    <% if (error) { %>
+    <% if (locals.error) { %>
         <div class="error-message"><%= error %></div>
     <% } %>
 
     <form action="/withdrawal" method="POST">
         <div class="form-group">
             <label for="amount">Monto a Retirar (TPYS)</label>
-            <input type="number" id="amount" name="amount" required min="50000" step="1" placeholder="Mínimo: 50000">
+            <input type="number" id="amount" name="amount" required min="300" step="1" placeholder="Mínimo: 300">
         </div>
         
         <div class="form-group">
             <label for="withdrawalMethod">Método de Retiro</label>
             <select id="withdrawalMethod" name="method" required>
-                <option value="">Selecciona un método</option>
+                <option value="" disabled selected>Selecciona un método</option>
                 <option value="transferencia">Transferencia Bancaria</option>
                 <option value="giro">Giro</option>
             </select>
         </div>
 
         <div id="transferenciaFields" style="display:none;">
+            <p style="font-size: 0.9rem; text-align: center;">Puedes llenar los datos de tu banco o solo tu alias.</p>
             <div class="form-group">
                 <label for="fullName">Nombre Completo</label>
-                <input type="text" name="fullName" placeholder="Tu nombre completo">
+                <input type="text" name="fullName" placeholder="Tu nombre completo como figura en la cuenta">
             </div>
             <div class="form-group">
                 <label for="ci">Cédula de Identidad</label>
@@ -48,28 +52,24 @@
                 <label for="accountNumber">Número de Cuenta</label>
                 <input type="text" name="accountNumber" placeholder="Tu número de cuenta">
             </div>
-            <div class="form-group">
-                <label for="accountType">Tipo de Cuenta</label>
-                <input type="text" name="accountType" placeholder="Ej: Caja de Ahorro">
-            </div>
              <div class="form-group">
-                <label for="alias">Alias (Opcional)</label>
-                <input type="text" name="alias" placeholder="Tu alias de transferencia">
+                <label for="alias">Alias de Transferencia (Opcional)</label>
+                <input type="text" name="alias" placeholder="Ej: mi.alias.py">
             </div>
         </div>
         
         <div id="giroFields" style="display:none;">
              <div class="form-group">
                 <label for="fullNameGiro">Nombre Completo</label>
-                <input type="text" name="fullNameGiro" placeholder="Tu nombre completo">
+                <input type="text" name="fullName" id="fullNameGiro" placeholder="Tu nombre completo">
             </div>
              <div class="form-group">
                 <label for="ciGiro">Cédula de Identidad</label>
-                <input type="text" name="ciGiro" placeholder="Tu número de cédula">
+                <input type="text" name="ci" id="ciGiro" placeholder="Tu número de cédula">
             </div>
             <div class="form-group">
                 <label for="phone">Número de Teléfono</label>
-                <input type="text" name="phone" placeholder="Tu número para el giro">
+                <input type="text" name="phone" id="phone" placeholder="Tu número para el giro">
             </div>
         </div>
 
