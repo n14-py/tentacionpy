@@ -137,26 +137,31 @@
                         <p><a href="/login">Inicia sesión</a> para dejar un comentario.</p>
                     <% } %>
                     <div id="comments-list">
-                        <% if (post.comments && post.comments.length > 0) { %>
-                            <% post.comments.slice().reverse().forEach(comment => { %>
-                                <% if (comment.userId) { %>
-                                    <div class="comment">
-                                        <img src="<%= comment.userId.profilePic %>" alt="avatar" class="avatar">
-                                        <div class="comment-body">
-                                            <strong><%= comment.userId.username %></strong>
-                                            <p><%= comment.text %></p>
-                                            <% if(comment.donation && comment.donation.amount > 0) { %>
-                                                <span class="donation-badge">Donó <%= comment.donation.amount %> 💎</span>
-                                            <% } %>
-                                        </div>
-                                    </div>
-                                <% } %>
-                            <% }); %>
+    <% if (locals.post && post.comments && post.comments.length > 0) { %>
+        <% post.comments.slice().reverse().forEach((comment, index) => { %>
+            <% if (comment.userId) { %>
+                <%# Añadimos la clase 'hidden' a los comentarios a partir del tercero %>
+                <div class="comment <%= index >= 3 ? 'hidden' : '' %>">
+                    <img src="<%= comment.userId.profilePic %>" alt="avatar" class="avatar">
+                    <div class="comment-body">
+                        <strong><%= comment.userId.username %></strong>
+                        <p><%= comment.text %></p>
+                        <% if(comment.donation && comment.donation.amount > 0) { %>
+                            <span class="donation-badge">Donó <%= comment.donation.amount %> 💎</span>
                         <% } %>
                     </div>
                 </div>
-            </div>
-        </div>
+            <% } %>
+        <% }); %>
+
+        <%# Añadimos el botón de "Ver más" si hay más de 3 comentarios %>
+        <% if (post.comments.length > 3) { %>
+            <button class="btn btn-secondary btn-block" id="show-more-comments">
+                Mostrar todos los comentarios (<%= post.comments.length %>)
+            </button>
+        <% } %>
+    <% } %>
+</div>
     <% } else { %>
         <div class="error-container">
             <h2>Anuncio no encontrado</h2>
@@ -226,7 +231,48 @@
     });
 </script>
 
+
+<% if (locals.recommendedPosts && recommendedPosts.length > 0) { %>
+        <div class="recommended-section">
+            <hr>
+            <h2>Recomendados para ti</h2>
+            <div class="post-grid">
+                <% recommendedPosts.forEach(recPost => { %>
+                    <div class="post-card">
+                        <a href="/anuncio/<%= recPost._id %>" class="post-card-link">
+                            <% if (recPost.files && recPost.files.length > 0) { %>
+                               <img src="<%= recPost.files[0] %>" alt="Post de <%= recPost.userId.username %>" class="post-card-image">
+                            <% } else { %>
+                               <img src="/img/placeholder.png" alt="Imagen no disponible" class="post-card-image">
+                            <% } %>
+                            
+                            <% if (recPost.isSubscriberOnly || (recPost.type === 'video' && recPost.price > 0)) { %>
+                               <div class="content-lock-icon"><i class="fas fa-lock"></i></div>
+                            <% } %>
+    
+                            <% if (recPost.type === 'video') { %>
+                                <div class="video-overlay"><i class="fas fa-play"></i></div>
+                            <% } %>
+                        </a>
+                        <div class="post-card-info">
+                            <% if (recPost.userId) { %>
+                                <a href="/user/<%= recPost.userId.username %>" class="post-card-user">
+                                    <img src="<%= recPost.userId.profilePic %>" alt="<%= recPost.userId.username %>" class="avatar">
+                                    <span><%= recPost.userId.username %></span>
+                                </a>
+                            <% } %>
+                        </div>
+                    </div>
+                <% }); %>
+            </div>
+        </div>
+    <% } %>
+
+</main>
+
 <%- include('partials/footer.html') %>
+
+
 
 </body>
 </html>

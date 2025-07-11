@@ -1,0 +1,13 @@
+<%# views/partials/user-card.html %>
+
+<div class="user-card">
+    <a href="/user/<%= user.username %>">
+        <img src="<%= user.profilePic %>" alt="Perfil de <%= user.username %>" class="user-card-image" onerror="this.onerror=null;this.src='/img/default.png';">
+        <div class="user-card-info">
+            <strong><%= user.username %></strong>
+            <% if (user.location) { %>
+                <span class="location"><i class="fas fa-map-marker-alt"></i> <%= user.location %></span>
+            <% } %>
+        </div>
+    </a>
+</div>

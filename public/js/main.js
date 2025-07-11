@@ -65,7 +65,9 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         modalConfirmBtn.addEventListener('click', () => { if (confirmCallback) confirmCallback(); });
         modalCancelBtn.addEventListener('click', hideModal);
-        closeModalBtn.addEventListener('click', hideModal);
+        if (closeModalBtn) {
+            closeModalBtn.addEventListener('click', hideModal);
+        }
     }
     
     // --- DELEGACIÓN DE EVENTOS ---
@@ -143,49 +145,86 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    const packagesContainer = document.querySelector('.tpy-packages');
-    if (packagesContainer) {
-        const packages = document.querySelectorAll('.tpy-package');
-        const payButton = document.getElementById('btn-pay');
-        let selectedPackage = null;
-        packages.forEach(pkg => {
-            pkg.addEventListener('click', () => {
-                packages.forEach(p => p.classList.remove('selected'));
-                pkg.classList.add('selected');
-                selectedPackage = { amountGs: pkg.dataset.gs, tpysAmount: pkg.dataset.tpys };
+    // --- LÓGICA PARA RECARGAR FONDOS (NUEVA VERSIÓN CON TARJETAS) ---
+    const packagesGrid = document.querySelector('.tpy-packages-grid');
+    if (packagesGrid) {
+        packagesGrid.addEventListener('click', async (e) => {
+            const payButton = e.target.closest('.btn-buy-package');
+            if (!payButton) return;
+    
+            payButton.disabled = true;
+            const originalText = payButton.textContent;
+            payButton.textContent = 'Procesando...';
+    
+            const selectedPackage = {
+                amountGs: payButton.dataset.gs,
+                tpysAmount: payButton.dataset.tpys
+            };
+    
+            const data = await makeApiCall('/pagopar/create-order', 'POST', selectedPackage, '', false);
+            
+            if (data && data.success) {
+                window.location.href = data.paymentUrl;
+            } else {
                 payButton.disabled = false;
-                payButton.textContent = `Pagar Gs. ${Number(selectedPackage.amountGs).toLocaleString('es-PY')}`;
-            });
-        });
-        if (payButton) {
-            payButton.addEventListener('click', async () => {
-                if (!selectedPackage) return;
-                payButton.disabled = true;
-                payButton.textContent = 'Procesando...';
-                const data = await makeApiCall('/pagopar/create-order', 'POST', selectedPackage, '', false);
-                if (data && data.success) {
-                    window.location.href = data.paymentUrl;
-                } else {
-                    payButton.disabled = false;
-                    payButton.textContent = `Pagar Gs. ${Number(selectedPackage.amountGs).toLocaleString('es-PY')}`;
-                    const errorDiv = document.getElementById('payment-error');
-                    if (errorDiv) {
-                        errorDiv.textContent = data ? data.message : 'No se pudo conectar con el servidor de pago.';
-                        errorDiv.style.display = 'block';
-                    }
+                payButton.textContent = originalText;
+                const errorDiv = document.getElementById('payment-error');
+                if (errorDiv) {
+                    errorDiv.textContent = data ? data.message : 'No se pudo conectar con el servidor de pago.';
+                    errorDiv.style.display = 'block';
                 }
-            });
-        }
+            }
+        });
     }
 
+
+    // --- LÓGICA PARA ALTERNAR FILTROS DE BÚSQUEDA ---
+    const searchTypeSelect = document.getElementById('search_type');
+    const postsFilters = document.getElementById('posts-filters');
+    const paidContentFilter = document.getElementById('paid-content-filter');
+
+    function toggleSearchFilters() {
+        if (!searchTypeSelect) return;
+        
+        if (searchTypeSelect.value === 'users') {
+            if(postsFilters) postsFilters.style.display = 'none';
+            if(paidContentFilter) paidContentFilter.style.display = 'none';
+        } else {
+            if(postsFilters) postsFilters.style.display = 'block';
+            if(paidContentFilter) paidContentFilter.style.display = 'flex';
+        }
+    }
+    if(searchTypeSelect) {
+        searchTypeSelect.addEventListener('change', toggleSearchFilters);
+        toggleSearchFilters(); // Ejecutar al cargar la página
+    }
+
+
+    // --- LÓGICA PARA "VER MÁS" COMENTARIOS ---
+    const showMoreBtn = document.getElementById('show-more-comments');
+    if (showMoreBtn) {
+        showMoreBtn.addEventListener('click', () => {
+            document.querySelectorAll('.comment.hidden').forEach(comment => {
+                comment.classList.remove('hidden');
+            });
+            showMoreBtn.style.display = 'none';
+        });
+    }
+
+    // --- FUNCIÓN HELPER PARA LLAMADAS A LA API ---
     async function makeApiCall(url, method, body, successMessage, reloadPage) {
         try {
-            const options = { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) };
+            const options = {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            };
             const response = await fetch(url, options);
             const data = await response.json();
             if (!response.ok) throw new Error(data.message || 'Ocurrió un error');
             if (successMessage) alert(successMessage);
             if (reloadPage) {
+                // Redirige si la API lo indica, si no, recarga la página actual.
                 window.location.href = data.redirectUrl || window.location.pathname;
             }
             return data;

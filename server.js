@@ -70,7 +70,7 @@ const upload = multer({ storage });
 
 
 // =============================================
-// CONSTANTES Y MODELOS DE DATOS (ACTUALIZADOS)
+// CONSTANTES Y MODELOS DE DATOS
 // =============================================
 const CITIES = ['Asunción', 'Central', 'Ciudad del Este', 'Encarnación', 'Villarrica', 'Coronel Oviedo', 'Pedro Juan Caballero', 'Otra'];
 const CATEGORIES = ['Acompañante', 'Masajes', 'OnlyFans', 'Contenido Digital', 'Shows', 'Otro'];
@@ -247,27 +247,81 @@ const isPostOwner = async (req, res, next) => {
 // =============================================
 app.get('/', (req, res) => res.redirect('/feed'));
 
+// RUTA /feed FINAL Y CORREGIDA
 app.get('/feed', async (req, res, next) => {
     try {
+        const page = parseInt(req.query.page) || 1;
+        const itemsPerPage = 10;
+
         let filter = {};
-        const { location, gender, category, q } = req.query;
-        if (category) filter.category = category;
-        const userFilter = {};
-        if (location) userFilter.location = location;
-        if (gender) userFilter.gender = gender;
-        if (Object.keys(userFilter).length > 0) {
-            const userIds = (await User.find(userFilter).select('_id')).map(u => u._id);
-            filter.userId = { $in: userIds };
+        const { search_type, q, username, category, gender, location, show_paid } = req.query;
+        
+        let resultType = search_type || 'posts'; // Default to 'posts'
+        let results = [];
+        let totalPages = 0;
+
+        if (resultType === 'users') {
+            let userFilter = {};
+            if (username) userFilter.username = { $regex: username, $options: 'i' };
+            if (location) userFilter.location = location;
+            if (gender) userFilter.gender = gender;
+
+            const totalUsers = await User.countDocuments(userFilter);
+            totalPages = Math.ceil(totalUsers / itemsPerPage);
+            results = await User.find(userFilter)
+                .skip((page - 1) * itemsPerPage)
+                .limit(itemsPerPage);
+
+        } else { // 'posts' or default
+            resultType = 'posts';
+            
+            // FILTRO BASE: Por defecto, solo imágenes gratuitas.
+            filter = { type: 'image', price: 0, isSubscriberOnly: false };
+
+            // MODIFICADORES: Los filtros de búsqueda anulan el filtro base.
+            if (category) filter.category = category;
+            
+            if (q) {
+                const regex = { $regex: q, $options: 'i' };
+                filter.$or = [{ description: regex }, { tags: regex }];
+            }
+
+            if (location || gender) {
+                const userQuery = {};
+                if (location) userQuery.location = location;
+                if (gender) userQuery.gender = gender;
+                const userIds = await User.find(userQuery).select('_id');
+                filter.userId = { $in: userIds.map(u => u._id) };
+            }
+            
+            // Si el usuario busca videos de pago, se cambia el tipo de contenido a buscar.
+            if (show_paid === 'on') {
+                filter.type = 'video';
+                filter.price = { $gt: 0 };
+                delete filter.isSubscriberOnly; // Ya no es relevante si buscamos videos de venta
+            }
+
+            const totalPosts = await Post.countDocuments(filter);
+            totalPages = Math.ceil(totalPosts / itemsPerPage);
+            results = await Post.find(filter)
+                .populate('userId')
+                .sort({ boostedUntil: -1, createdAt: -1 })
+                .skip((page - 1) * itemsPerPage)
+                .limit(itemsPerPage);
         }
-        if (q) {
-            const regex = { $regex: q, $options: 'i' };
-            const userIdsByName = (await User.find({ username: regex }).select('_id')).map(u => u._id);
-            const orConditions = [{ description: regex }, { tags: regex }, { userId: { $in: userIdsByName } }];
-            filter.$or = filter.$or ? [...filter.$or, ...orConditions] : orConditions;
-        }
-        const posts = await Post.find(filter).populate('userId').sort({ boostedUntil: -1, createdAt: -1 });
-        res.render('index', { posts, query: req.query });
-    } catch (err) { next(err); }
+
+        res.render('index', { 
+            results,
+            resultType,
+            query: req.query,
+            currentPage: page,
+            totalPages
+        });
+
+    } catch (err) { 
+        console.error("Error en /feed:", err);
+        next(err); 
+    }
 });
 
 app.get('/register', (req, res) => res.render('register', { error: null }));
@@ -312,37 +366,6 @@ app.get('/user/:username', async (req, res, next) => {
         const viewToRender = req.user && req.user._id.equals(userProfile._id) ? 'profile' : 'user-profile';
         res.render(viewToRender, { userProfile, posts, isSubscribed });
     } catch (err) { next(err); }
-});
-
-// =============================================
-// RUTA PARA "MIS VIDEOS" (Y OTRAS PÁGINAS DE CONTENIDO)
-// =============================================
-
-app.get('/my-videos', requireAuth, async (req, res, next) => {
-    try {
-        // Buscamos al usuario y poblamos la información de los videos comprados
-        // y también la información del creador de cada video.
-        const user = await User.findById(req.user._id).populate({
-            path: 'purchasedVideos',
-            model: 'Post',
-            populate: {
-                path: 'userId',
-                model: 'User',
-                select: 'username profilePic' // Solo traemos los datos necesarios
-            }
-        });
-
-        if (!user) {
-            // Esta comprobación es por seguridad, aunque es poco probable que falle.
-            return res.status(404).render('error', { message: 'Usuario no encontrado.' });
-        }
-        
-        // Pasamos la lista de videos a la vista 'my-videos.html'
-        res.render('my-videos', { videos: user.purchasedVideos });
-    } catch (err) {
-        // Si hay un error en la base de datos, lo pasamos al manejador de errores.
-        next(err);
-    }
 });
 
 app.post('/user/:id/follow', requireAuth, async (req, res, next) => {
@@ -392,8 +415,23 @@ app.post('/new-post', requireAuth, upload.array('files', 10), async (req, res, n
 app.get('/anuncio/:id', async (req, res, next) => {
     try {
         const post = await Post.findByIdAndUpdate(req.params.id, { $inc: { views: 1 } }, { new: true })
-            .populate('userId').populate({ path: 'comments', populate: { path: 'userId', select: 'username profilePic' } });
-        if (!post) return res.status(404).render('error', { message: 'Anuncio no encontrado.' });
+            .populate('userId', 'username profilePic location')
+            .populate({ 
+                path: 'comments', 
+                populate: { path: 'userId', select: 'username profilePic' } 
+            });
+
+        if (!post) {
+            return res.status(404).render('error', { message: 'Anuncio no encontrado.' });
+        }
+
+        const recommendedPosts = await Post.find({
+            _id: { $ne: post._id },
+            category: post.category
+        })
+        .limit(4)
+        .populate('userId', 'username profilePic');
+
         let canView = true, isOwner = false, hasPurchased = false, hasSubscriptionAccess = false;
         if (req.user) {
             isOwner = post.userId.equals(req.user._id);
@@ -404,29 +442,39 @@ app.get('/anuncio/:id', async (req, res, next) => {
                 canView = isOwner || hasPurchased || hasSubscriptionAccess || req.user.isAdmin;
             }
         }
-        res.render('anuncio-detail', { post, canView, isOwner, hasPurchased, hasSubscriptionAccess });
-    } catch (err) { next(err); }
+        
+        res.render('anuncio-detail', { 
+            post, 
+            canView, 
+            isOwner, 
+            hasPurchased, 
+            hasSubscriptionAccess,
+            recommendedPosts
+        });
+
+    } catch (err) {
+        next(err);
+    }
 });
 
 app.post('/post/:id/delete', requireAuth, isPostOwner, async (req, res, next) => {
     const dbSession = await mongoose.startSession();
-    dbSession.startTransaction();
     try {
-        const post = res.locals.post;
-        for (const fileUrl of post.files) {
-            const publicId = getPublicId(fileUrl);
-            if (publicId) {
-                await cloudinary.uploader.destroy(publicId, { resource_type: fileUrl.includes('/video/') ? 'video' : 'image' }).catch(err => console.log("Cloudinary destroy failed (non-critical):", err));
+        await dbSession.withTransaction(async () => {
+            const post = res.locals.post;
+            for (const fileUrl of post.files) {
+                const publicId = getPublicId(fileUrl);
+                if (publicId) {
+                    await cloudinary.uploader.destroy(publicId, { resource_type: fileUrl.includes('/video/') ? 'video' : 'image' }).catch(err => console.log("Cloudinary destroy failed (non-critical):", err));
+                }
             }
-        }
-        await Post.findByIdAndDelete(req.params.id, { session: dbSession });
-        await dbSession.commitTransaction();
+            await Post.findByIdAndDelete(req.params.id, { session: dbSession });
+        });
         res.json({ success: true, redirectUrl: '/profile' });
     } catch (err) {
-        await dbSession.abortTransaction();
         next(err);
     } finally {
-        dbSession.endSession();
+        await dbSession.endSession();
     }
 });
 
@@ -446,54 +494,100 @@ app.post('/post/:id/like', requireAuth, async (req, res, next) => {
     } catch (err) { res.status(500).json({ success: false }); }
 });
 
-app.post('/post/:id/comments', requireAuth, async (req, res, next) => {
+// --- RUTA DE COMENTARIOS CORREGIDA ---
+app.post('/post/:id/comments', requireAuth, async (req, res) => {
     const { text, donationAmount } = req.body;
     const dbSession = await mongoose.startSession();
-    dbSession.startTransaction();
     try {
-        const post = await Post.findById(req.params.id).session(dbSession);
-        if (!post) throw new Error("Post no encontrado");
-        const commenter = await User.findById(req.user._id).session(dbSession);
-        const amount = Number(donationAmount) || 0;
-        if (amount > 0 && commenter.tpysBalance < amount) throw new Error("No tienes suficientes TPYS para donar.");
-        
-        const newCommentData = { userId: commenter._id, text };
-        if (amount > 0) {
-            const creator = await User.findById(post.userId).session(dbSession);
-            const netEarning = amount * CREATOR_EARNING_RATE;
-            commenter.tpysBalance -= amount;
-            creator.tpysBalance += netEarning;
-            newCommentData.donation = { userId: commenter._id, amount };
-            await new Transaction({ type: 'donation', sellerId: creator._id, buyerId: commenter._id, postId: post._id, amount, netEarning }).save({ session: dbSession });
-            await new Notification({ userId: creator._id, actorId: commenter._id, type: 'donation', postId: post._id, message: `te donó ${amount} TPYS en tu post.` }).save({ session: dbSession });
-            await commenter.save({ session: dbSession });
-            await creator.save({ session: dbSession });
-        }
-        
-        post.comments.push(newCommentData);
-        await post.save({ session: dbSession });
-        
-        if (!post.userId.equals(commenter._id)) {
-            await new Notification({ userId: post.userId, actorId: commenter._id, type: 'comment', postId: post._id, message: `comentó tu post.` }).save({ session: dbSession });
-        }
-        
-        await dbSession.commitTransaction();
-        const newComment = post.comments[post.comments.length - 1];
-        const populatedComment = await newComment.populate('userId', 'username profilePic');
-        res.json({ success: true, comment: populatedComment });
+        let populatedComment;
+        await dbSession.withTransaction(async (session) => {
+            const post = await Post.findById(req.params.id).session(session);
+            if (!post) throw new Error("Post no encontrado");
+
+            const commenter = await User.findById(req.user._id).session(session);
+            const amount = Number(donationAmount) || 0;
+
+            if (amount > 0 && commenter.tpysBalance < amount) {
+                throw new Error("No tienes suficientes TPYS para donar.");
+            }
+
+            const newCommentData = { userId: commenter._id, text };
+
+            if (amount > 0) {
+                const isSelfDonation = commenter._id.equals(post.userId);
+                const netEarning = amount * CREATOR_EARNING_RATE;
+
+                if (isSelfDonation) {
+                    commenter.tpysBalance = commenter.tpysBalance - amount + netEarning;
+                    await commenter.save({ session });
+                    await new Transaction({
+                        type: 'donation',
+                        sellerId: commenter._id,
+                        buyerId: commenter._id,
+                        postId: post._id,
+                        amount,
+                        netEarning
+                    }).save({ session });
+                } else {
+                    const creator = await User.findById(post.userId).session(session);
+                    commenter.tpysBalance -= amount;
+                    creator.tpysBalance += netEarning;
+                    await commenter.save({ session });
+                    await creator.save({ session });
+                    await new Transaction({
+                        type: 'donation',
+                        sellerId: creator._id,
+                        buyerId: commenter._id,
+                        postId: post._id,
+                        amount,
+                        netEarning
+                    }).save({ session });
+                    await new Notification({
+                        userId: creator._id,
+                        actorId: commenter._id,
+                        type: 'donation',
+                        postId: post._id,
+                        message: `te donó ${amount} TPYS en tu post.`
+                    }).save({ session });
+                }
+
+                newCommentData.donation = { userId: commenter._id, amount };
+            }
+
+            post.comments.push(newCommentData);
+            await post.save({ session });
+
+            if (!post.userId.equals(commenter._id)) {
+                await new Notification({
+                    userId: post.userId,
+                    actorId: commenter._id,
+                    type: 'comment',
+                    postId: post._id,
+                    message: `comentó tu post.`
+                }).save({ session });
+            }
+
+            const newComment = post.comments[post.comments.length - 1];
+            await post.populate({
+                path: 'comments.userId',
+                select: 'username profilePic'
+            });
+            populatedComment = post.comments.find(c => c._id.equals(newComment._id));
+        });
+
+        res.status(200).json({ success: true, comment: populatedComment });
     } catch (err) {
-        await dbSession.abortTransaction();
-        res.status(500).json({ success: false, message: err.message });
+        console.error("Error en la transacción de comentario:", err.message);
+        res.status(500).json({ success: false, message: err.message || 'Error interno del servidor.' });
     } finally {
-        dbSession.endSession();
+        await dbSession.endSession();
     }
 });
 
 
 // =============================================
-// --- RUTAS DE PÁGINAS QUE FALTABAN ---
+// --- RUTAS DE PÁGINAS ---
 // =============================================
-
 app.get('/my-videos', requireAuth, async (req, res, next) => {
     try {
         const user = await User.findById(req.user._id).populate({
@@ -501,9 +595,7 @@ app.get('/my-videos', requireAuth, async (req, res, next) => {
             populate: { path: 'userId', select: 'username profilePic' }
         });
         res.render('my-videos', { videos: user.purchasedVideos });
-    } catch (err) {
-        next(err);
-    }
+    } catch (err) { next(err); }
 });
 
 app.get('/my-likes', requireAuth, async (req, res, next) => {
@@ -513,166 +605,143 @@ app.get('/my-likes', requireAuth, async (req, res, next) => {
             populate: { path: 'userId', select: 'username profilePic' }
         });
         res.render('my-likes', { posts: user.likedPosts });
-    } catch (err) {
-        next(err);
-    }
+    } catch (err) { next(err); }
 });
 
 app.get('/notifications', requireAuth, async (req, res, next) => {
     try {
         const notifications = await Notification.find({ userId: req.user._id })
             .populate('actorId', 'username profilePic')
+            .populate('postId', 'description type files')
             .sort({ createdAt: -1 });
         
-        // Marcar como leídas al verlas
         await Notification.updateMany({ userId: req.user._id, isRead: false }, { $set: { isRead: true }});
         
         res.render('notifications', { notifications });
-    } catch (err) {
-        next(err);
-    }
+    } catch (err) { next(err); }
 });
 
-app.get('/terms', (req, res) => {
-    res.render('terms');
-});
-
-app.get('/payout-info', requireAuth, (req, res) => {
-    res.render('payout-info');
-});
+app.get('/terms', (req, res) => res.render('terms'));
+app.get('/payout-info', requireAuth, (req, res) => res.render('payout-info'));
 
 
 // =============================================
-// RUTAS DE MONETIZACIÓN (COMPRA, SUSCRIPCIÓN, PROMOCIÓN)
+// RUTAS DE MONETIZACIÓN
 // =============================================
 app.post('/post/:id/boost', requireAuth, isPostOwner, async (req, res, next) => {
     const { boost, boostLabel, boostColor } = req.body;
     const dbSession = await mongoose.startSession();
-    dbSession.startTransaction();
     try {
-        const post = res.locals.post;
-        const user = await User.findById(req.user._id).session(dbSession);
-        const [plan, cost] = boost.split('_');
-        const boostCost = parseInt(cost, 10);
-        let boostDays = { viral: 1, tendencia: 3, hot: 10 }[plan];
-        
-        if (user.tpysBalance < boostCost) throw new Error('No tienes suficientes TPYS para esta promoción.');
-        
-        user.tpysBalance -= boostCost;
-        post.boostedUntil = new Date(Date.now() + boostDays * 24 * 60 * 60 * 1000);
-        post.boostOptions = { color: boostColor, label: boostLabel };
-        
-        await new Transaction({ type: 'boost', buyerId: user._id, postId: post._id, amount: boostCost, netEarning: 0 }).save({ session: dbSession });
-        await user.save({ session: dbSession });
-        await post.save({ session: dbSession });
-        
-        await dbSession.commitTransaction();
-        res.json({ success: true, message: "¡Anuncio promocionado con éxito!", redirectUrl: `/anuncio/${post._id}` });
+        await dbSession.withTransaction(async (session) => {
+            const post = await Post.findById(req.params.id).session(session);
+            const user = await User.findById(req.user._id).session(session);
+            const [plan, cost] = boost.split('_');
+            const boostCost = parseInt(cost, 10);
+            let boostDays = { viral: 1, tendencia: 3, hot: 10 }[plan];
+            if (user.tpysBalance < boostCost) throw new Error('No tienes suficientes TPYS para esta promoción.');
+            user.tpysBalance -= boostCost;
+            post.boostedUntil = new Date(Date.now() + boostDays * 24 * 60 * 60 * 1000);
+            post.boostOptions = { color: boostColor, label: boostLabel };
+            await new Transaction({ type: 'boost', buyerId: user._id, postId: post._id, amount: boostCost, netEarning: 0 }).save({ session });
+            await user.save({ session });
+            await post.save({ session });
+        });
+        res.json({ success: true, message: "¡Anuncio promocionado con éxito!", redirectUrl: `/anuncio/${req.params.id}` });
     } catch (err) {
-        await dbSession.abortTransaction();
         res.status(400).json({ success: false, message: err.message });
     } finally {
-        dbSession.endSession();
+        await dbSession.endSession();
     }
 });
 
 app.post('/buy-video/:id', requireAuth, async (req, res, next) => {
     const dbSession = await mongoose.startSession();
-    dbSession.startTransaction();
     try {
-        const post = await Post.findById(req.params.id).session(dbSession);
-        if (!post || post.type !== 'video' || post.isSubscriberOnly) throw new Error('Video no disponible para compra.');
-        const buyer = await User.findById(req.user._id).session(dbSession);
-        if (buyer.tpysBalance < post.price) throw new Error('No tienes suficientes TPYS.');
-        if (buyer.purchasedVideos.includes(post._id)) throw new Error('Ya has comprado este video.');
-        
-        const seller = await User.findById(post.userId).session(dbSession);
-        const price = post.price;
-        const netEarning = price * CREATOR_EARNING_RATE;
-        buyer.tpysBalance -= price;
-        seller.tpysBalance += netEarning;
-        buyer.purchasedVideos.push(post._id);
-        post.salesCount += 1;
-        
-        await buyer.save({ session: dbSession });
-        await seller.save({ session: dbSession });
-        await post.save({ session: dbSession });
-        await new Transaction({ type: 'video_purchase', sellerId: seller._id, buyerId: buyer._id, postId: post._id, amount: price, netEarning }).save({ session: dbSession });
-        await new Notification({ userId: seller._id, actorId: buyer._id, type: 'sale', postId: post._id, message: `vendió su video.` }).save({ session: dbSession });
-        
-        await dbSession.commitTransaction();
+        await dbSession.withTransaction(async (session) => {
+            const post = await Post.findById(req.params.id).session(session);
+            if (!post || post.type !== 'video' || post.isSubscriberOnly) throw new Error('Video no disponible para compra.');
+            const buyer = await User.findById(req.user._id).session(session);
+            if (buyer.tpysBalance < post.price) throw new Error('No tienes suficientes TPYS.');
+            if (buyer.purchasedVideos.includes(post._id)) throw new Error('Ya has comprado este video.');
+            
+            const seller = await User.findById(post.userId).session(session);
+            const price = post.price;
+            const netEarning = price * CREATOR_EARNING_RATE;
+            buyer.tpysBalance -= price;
+            seller.tpysBalance += netEarning;
+            buyer.purchasedVideos.push(post._id);
+            post.salesCount += 1;
+            
+            await buyer.save({ session });
+            await seller.save({ session });
+            await post.save({ session });
+            await new Transaction({ type: 'video_purchase', sellerId: seller._id, buyerId: buyer._id, postId: post._id, amount: price, netEarning }).save({ session });
+            await new Notification({ userId: seller._id, actorId: buyer._id, type: 'sale', postId: post._id, message: `vendió su video.` }).save({ session });
+        });
         res.json({ success: true, message: "¡Compra exitosa! El video ahora está en 'Mis Compras'." });
     } catch (err) {
-        await dbSession.abortTransaction();
         res.status(400).json({ success: false, message: err.message });
     } finally {
-        dbSession.endSession();
+        await dbSession.endSession();
     }
 });
 
 app.post('/user/:id/subscribe', requireAuth, async (req, res, next) => {
     const dbSession = await mongoose.startSession();
-    dbSession.startTransaction();
     try {
-        const creator = await User.findById(req.params.id).session(dbSession);
-        if (!creator || !creator.subscriptionSettings.isActive) throw new Error("Este creador no tiene las suscripciones activas.");
-        const buyer = await User.findById(req.user._id).session(dbSession);
-        const price = creator.subscriptionSettings.price;
-        if (buyer._id.equals(creator._id)) throw new Error("No puedes suscribirte a ti mismo.");
-        if (buyer.tpysBalance < price) throw new Error("No tienes suficientes TPYS.");
-        
-        const netEarning = price * CREATOR_EARNING_RATE;
-        buyer.tpysBalance -= price;
-        creator.tpysBalance += netEarning;
-        
-        const now = new Date();
-        const existingSubIndex = buyer.subscriptions.findIndex(s => s.creatorId.equals(creator._id));
-        let newEndDate = new Date(new Date(now).setMonth(now.getMonth() + 1));
+        await dbSession.withTransaction(async (session) => {
+            const creator = await User.findById(req.params.id).session(session);
+            if (!creator || !creator.subscriptionSettings.isActive) throw new Error("Este creador no tiene las suscripciones activas.");
+            const buyer = await User.findById(req.user._id).session(session);
+            const price = creator.subscriptionSettings.price;
+            if (buyer._id.equals(creator._id)) throw new Error("No puedes suscribirte a ti mismo.");
+            if (buyer.tpysBalance < price) throw new Error("No tienes suficientes TPYS.");
+            
+            const netEarning = price * CREATOR_EARNING_RATE;
+            buyer.tpysBalance -= price;
+            creator.tpysBalance += netEarning;
+            
+            const now = new Date();
+            const existingSubIndex = buyer.subscriptions.findIndex(s => s.creatorId.equals(creator._id));
+            let newEndDate = new Date(new Date(now).setMonth(now.getMonth() + 1));
 
-        if (existingSubIndex > -1) {
-            const currentEndDate = new Date(buyer.subscriptions[existingSubIndex].endDate);
-            if (currentEndDate > now) {
-                newEndDate = new Date(currentEndDate.setMonth(currentEndDate.getMonth() + 1));
+            if (existingSubIndex > -1) {
+                const currentEndDate = new Date(buyer.subscriptions[existingSubIndex].endDate);
+                if (currentEndDate > now) newEndDate = new Date(currentEndDate.setMonth(currentEndDate.getMonth() + 1));
+                buyer.subscriptions[existingSubIndex].endDate = newEndDate;
+            } else {
+                buyer.subscriptions.push({ creatorId: creator._id, endDate: newEndDate });
             }
-            buyer.subscriptions[existingSubIndex].endDate = newEndDate;
-        } else {
-            buyer.subscriptions.push({ creatorId: creator._id, endDate: newEndDate });
-        }
-        
-        const subscriberIndex = creator.subscribers.findIndex(s => s.subscriberId.equals(buyer._id));
-        if (subscriberIndex > -1) {
-            creator.subscribers[subscriberIndex].endDate = newEndDate;
-        } else {
-            creator.subscribers.push({ subscriberId: buyer._id, endDate: newEndDate });
-        }
-        
-        // Iniciar conversación si no existe
-        let conversation = await Conversation.findOne({ participants: { $all: [buyer._id, creator._id] } });
-        if (!conversation) {
-             conversation = new Conversation({ participants: [buyer._id, creator._id] });
-             await conversation.save({ session: dbSession });
-             if(creator.automatedMessageEnabled && creator.automatedChatMessage) {
-                const autoMessage = new Message({ conversationId: conversation._id, senderId: creator._id, text: creator.automatedChatMessage });
-                conversation.lastMessage = autoMessage._id;
-                await autoMessage.save({ session: dbSession });
-                await conversation.save({ session: dbSession });
-                await new Notification({ userId: buyer._id, actorId: creator._id, type: 'message', message: "Te ha enviado un mensaje automático." }).save({ session: dbSession });
-             }
-        }
-
-        await new Transaction({ type: 'subscription', sellerId: creator._id, buyerId: buyer._id, amount: price, netEarning }).save({ session: dbSession });
-        await new Notification({ userId: creator._id, actorId: buyer._id, type: 'subscribe', message: `se ha suscrito a tu perfil.` }).save({ session: dbSession });
-        
-        await buyer.save({ session: dbSession });
-        await creator.save({ session: dbSession });
-        
-        await dbSession.commitTransaction();
+            
+            const subscriberIndex = creator.subscribers.findIndex(s => s.subscriberId.equals(buyer._id));
+            if (subscriberIndex > -1) {
+                creator.subscribers[subscriberIndex].endDate = newEndDate;
+            } else {
+                creator.subscribers.push({ subscriberId: buyer._id, endDate: newEndDate });
+            }
+            
+            let conversation = await Conversation.findOne({ participants: { $all: [buyer._id, creator._id] } });
+            if (!conversation) {
+                 conversation = new Conversation({ participants: [buyer._id, creator._id] });
+                 await conversation.save({ session });
+                 if(creator.automatedMessageEnabled && creator.automatedChatMessage) {
+                    const autoMessage = new Message({ conversationId: conversation._id, senderId: creator._id, text: creator.automatedChatMessage });
+                    conversation.lastMessage = autoMessage._id;
+                    await autoMessage.save({ session });
+                    await conversation.save({ session });
+                    await new Notification({ userId: buyer._id, actorId: creator._id, type: 'message', message: "Te ha enviado un mensaje automático." }).save({ session });
+                 }
+            }
+            await new Transaction({ type: 'subscription', sellerId: creator._id, buyerId: buyer._id, amount: price, netEarning }).save({ session });
+            await new Notification({ userId: creator._id, actorId: buyer._id, type: 'subscribe', message: `se ha suscrito a tu perfil.` }).save({ session });
+            await buyer.save({ session });
+            await creator.save({ session });
+        });
         res.json({ success: true, message: '¡Suscripción exitosa!' });
     } catch (err) {
-        await dbSession.abortTransaction();
         res.status(400).json({ success: false, message: err.message });
     } finally {
-        dbSession.endSession();
+        await dbSession.endSession();
     }
 });
 
@@ -691,69 +760,57 @@ app.post('/pagopar/create-order', requireAuth, async (req, res) => {
         const orderData = {
             "token": hash,
             "comprador": { "ruc": "0", "email": req.user.email, "nombre": req.user.username, "telefono": "0999999999", "direccion": "N/A", "documento": "0", "razon_social": req.user.username, "tipo_documento": "CI" },
-            "public_key": PAGOPAR_PUBLIC_TOKEN,
-            "monto_total": amount,
-            "tipo_pedido": "VENTA-COMERCIO",
-            "id_pedido_comercio": orderId,
-            "descripcion_resumen": `Compra de ${tpysAmount} TPYS`,
+            "public_key": PAGOPAR_PUBLIC_TOKEN, "monto_total": amount, "tipo_pedido": "VENTA-COMERCIO",
+            "id_pedido_comercio": orderId, "descripcion_resumen": `Compra de ${tpysAmount} TPYS`,
             "fecha_maxima_pago": new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10).replace(/-/g, ""),
             "url_retorno_ok": `${process.env.BASE_URL || 'http://localhost:3000'}/payment-success`,
             "url_retorno_error": `${process.env.BASE_URL || 'http://localhost:3000'}/payment-error`,
             "url_notificacion_pedido": `${process.env.BASE_URL || 'http://localhost:3000'}/pagopar/callback`
         };
 
-        const response = await fetch('https://api.pagopar.com/api/pedido/generar', {
-            method: 'POST',
-            body: JSON.stringify(orderData),
-            headers: { 'Content-Type': 'application/json' }
+        const response = await fetch('https://api.pagopar.com/api/pedido/generar/desarrollo', {
+            method: 'POST', body: JSON.stringify(orderData), headers: { 'Content-Type': 'application/json' }
         });
         const jsonResponse = await response.json();
 
         if (jsonResponse.respuesta === true) {
-            await new Transaction({
-                type: 'tpys_purchase', buyerId: req.user._id, amount, netEarning: parseInt(tpysAmount, 10),
-                currency: 'PYG', paymentGatewayId: orderId, status: 'PENDIENTE'
-            }).save();
+            await new Transaction({ type: 'tpys_purchase', buyerId: req.user._id, amount, netEarning: parseInt(tpysAmount, 10), currency: 'PYG', paymentGatewayId: orderId, status: 'PENDIENTE' }).save();
             res.json({ success: true, paymentUrl: jsonResponse.resultado[0].data });
         } else {
             throw new Error(jsonResponse.resultado || 'Error con Pagopar');
         }
     } catch (err) {
-        console.error("Error creating Pagopar order:", err);
         res.status(500).json({ success: false, message: 'Error al crear la orden de pago.' });
     }
 });
 
 app.post('/pagopar/callback', async (req, res) => {
-    const { hash, id_pedido_comercio, estado, forma_pago } = req.body;
+    const { hash, id_pedido_comercio, estado } = req.body;
     const localHash = crypto.createHash('sha1').update(PAGOPAR_PRIVATE_TOKEN + id_pedido_comercio + estado).digest('hex');
     if (hash !== localHash) return res.status(403).send("Hash inválido.");
 
-    if (estado === 'pagado') {
-        const dbSession = await mongoose.startSession();
-        dbSession.startTransaction();
-        try {
-            const transaction = await Transaction.findOne({ paymentGatewayId: id_pedido_comercio, status: 'PENDIENTE' }).session(dbSession);
+    const dbSession = await mongoose.startSession();
+    try {
+        await dbSession.withTransaction(async (session) => {
+            const transaction = await Transaction.findOne({ paymentGatewayId: id_pedido_comercio, status: 'PENDIENTE' }).session(session);
             if (transaction) {
-                const user = await User.findById(transaction.buyerId).session(dbSession);
-                user.tpysBalance += transaction.netEarning;
-                transaction.status = 'COMPLETADO';
-                await user.save({ session: dbSession });
-                await transaction.save({ session: dbSession });
+                if (estado === 'pagado') {
+                    const user = await User.findById(transaction.buyerId).session(session);
+                    user.tpysBalance += transaction.netEarning;
+                    transaction.status = 'COMPLETADO';
+                    await user.save({ session });
+                    await transaction.save({ session });
+                } else if (estado === 'cancelado') {
+                    transaction.status = 'CANCELADO';
+                    await transaction.save({ session });
+                }
             }
-            await dbSession.commitTransaction();
-            res.status(200).send("OK");
-        } catch (err) {
-            await dbSession.abortTransaction();
-            res.status(500).send("Error interno al procesar el pago.");
-        } finally {
-            dbSession.endSession();
-        }
-    } else if (estado === 'cancelado') {
-        await Transaction.findOneAndUpdate({ paymentGatewayId: id_pedido_comercio, status: 'PENDIENTE' }, { status: 'CANCELADO' });
+        });
         res.status(200).send("OK");
-    } else {
-        res.status(200).send("OK");
+    } catch (err) {
+        res.status(500).send("Error interno al procesar el pago.");
+    } finally {
+        await dbSession.endSession();
     }
 });
 
@@ -777,9 +834,7 @@ app.get('/chat', requireAuth, async (req, res, next) => {
 app.get('/chat/with/:userId', requireAuth, async (req, res, next) => {
     const { userId } = req.params;
     try {
-        let conversation = await Conversation.findOne({
-            participants: { $all: [req.user._id, userId] }
-        });
+        let conversation = await Conversation.findOne({ participants: { $all: [req.user._id, userId] }});
         if (!conversation) {
             const creator = await User.findById(userId);
             const isSubscribed = req.user.subscriptions.some(s => s.creatorId.equals(creator._id) && new Date(s.endDate) > new Date());
@@ -809,40 +864,36 @@ app.post('/chat/:conversationId/messages', requireAuth, async (req, res, next) =
     const { text, tpysAmount } = req.body;
     const amount = Number(tpysAmount) || 0;
     const dbSession = await mongoose.startSession();
-    dbSession.startTransaction();
     try {
-        const conversation = await Conversation.findById(req.params.conversationId).session(dbSession);
-        if (!conversation.participants.includes(req.user._id)) throw new Error("No eres parte de esta conversación.");
-        
-        const sender = await User.findById(req.user._id).session(dbSession);
-        const receiverId = conversation.participants.find(p => !p.equals(sender._id));
-        const receiver = await User.findById(receiverId).session(dbSession);
+        let populatedMessage;
+        await dbSession.withTransaction(async (session) => {
+            const conversation = await Conversation.findById(req.params.conversationId).session(session);
+            if (!conversation.participants.includes(req.user._id)) throw new Error("No eres parte de esta conversación.");
+            const sender = await User.findById(req.user._id).session(session);
+            const receiverId = conversation.participants.find(p => !p.equals(sender._id));
+            const receiver = await User.findById(receiverId).session(session);
 
-        if (amount > 0) {
-            if (sender.tpysBalance < amount) throw new Error("No tienes suficientes TPYS para enviar esta propina.");
-            const netEarning = amount * CREATOR_EARNING_RATE;
-            sender.tpysBalance -= amount;
-            receiver.tpysBalance += netEarning;
-            await new Transaction({ type: 'chat_tip', sellerId: receiver._id, buyerId: sender._id, amount, netEarning }).save({ session: dbSession });
-            await new Notification({ userId: receiver._id, actorId: sender._id, type: 'tip', message: `te envió ${amount} TPYS en el chat.` }).save({ session: dbSession });
-        }
-        
-        const newMessage = new Message({ conversationId: conversation._id, senderId: sender._id, text, tpysAmount: amount });
-        conversation.lastMessage = newMessage._id;
-
-        await sender.save({ session: dbSession });
-        if(amount > 0) await receiver.save({ session: dbSession });
-        await newMessage.save({ session: dbSession });
-        await conversation.save({ session: dbSession });
-
-        await dbSession.commitTransaction();
-        const populatedMessage = await newMessage.populate('senderId', 'username profilePic');
+            if (amount > 0) {
+                if (sender.tpysBalance < amount) throw new Error("No tienes suficientes TPYS para enviar esta propina.");
+                const netEarning = amount * CREATOR_EARNING_RATE;
+                sender.tpysBalance -= amount;
+                receiver.tpysBalance += netEarning;
+                await new Transaction({ type: 'chat_tip', sellerId: receiver._id, buyerId: sender._id, amount, netEarning }).save({ session });
+                await new Notification({ userId: receiver._id, actorId: sender._id, type: 'tip', message: `te envió ${amount} TPYS en el chat.` }).save({ session });
+            }
+            const newMessage = new Message({ conversationId: conversation._id, senderId: sender._id, text, tpysAmount: amount });
+            conversation.lastMessage = newMessage._id;
+            await sender.save({ session });
+            if(amount > 0) await receiver.save({ session });
+            await newMessage.save({ session });
+            await conversation.save({ session });
+            populatedMessage = await newMessage.populate('senderId', 'username profilePic');
+        });
         res.json({ success: true, message: populatedMessage });
     } catch (err) {
-        await dbSession.abortTransaction();
         res.status(400).json({ success: false, message: err.message });
     } finally {
-        dbSession.endSession();
+        await dbSession.endSession();
     }
 });
 
@@ -856,10 +907,10 @@ app.get('/settings/:page', requireAuth, async (req, res, next) => {
         const validPages = ['dashboard', 'profile', 'subscriptions', 'automations', 'payouts'];
         if (!validPages.includes(page)) return res.redirect('/settings/dashboard');
 
-        let data = { page }; // Pasamos la página actual para el menú activo
+        let data = { page };
 
         if (page === 'dashboard') {
-            const transactions = await Transaction.find({ sellerId: req.user._id }).populate('buyerId', 'username').populate('postId', 'description').sort({ createdAt: -1 });
+            const transactions = await Transaction.find({ sellerId: req.user._id }).populate('buyerId', 'username').sort({ createdAt: -1 });
             const totalNetEarnings = transactions.reduce((sum, t) => sum + (t.netEarning || 0), 0);
             const activeSubscribers = req.user.subscribers.filter(s => new Date(s.endDate) > new Date()).length;
             data = { ...data, totalNetEarnings, transactions, activeSubscribersCount: activeSubscribers };
@@ -867,7 +918,6 @@ app.get('/settings/:page', requireAuth, async (req, res, next) => {
         if (page === 'payouts') {
             data.withdrawals = await Withdrawal.find({ userId: req.user._id }).sort({ createdAt: -1 });
         }
-
         res.render(`settings/${page}`, data);
     } catch(err) { next(err); }
 });
@@ -948,11 +998,8 @@ app.get('/admin/dashboard', requireAdmin, async (req, res, next) => {
             return sum + (t.amount - t.netEarning);
         }, 0);
 
-        const stats = {
-            totalUsers, totalPosts, totalGsSold, totalTpysSold, totalCommissionTpys, totalSubscriptions, pendingWithdrawals: totalWithdrawals
-        };
+        const stats = { totalUsers, totalPosts, totalGsSold, totalTpysSold, totalCommissionTpys, totalSubscriptions, pendingWithdrawals: totalWithdrawals };
 
-        // Borrar datos antiguos si es necesario
         const twoMonthsAgo = new Date(new Date().setMonth(new Date().getMonth() - 2));
         await Transaction.deleteMany({ createdAt: { $lt: twoMonthsAgo } });
         await Notification.deleteMany({ createdAt: { $lt: twoMonthsAgo } });
@@ -967,18 +1014,29 @@ app.get('/admin/withdrawals', requireAdmin, async (req, res, next) => {
         res.render('admin-withdrawals', { withdrawals });
     } catch (err) { next(err); }
 });
+
 app.post('/admin/withdrawal/:id/update', requireAdmin, async (req, res, next) => {
     try {
         const { status } = req.body;
         const withdrawal = await Withdrawal.findById(req.params.id);
+
+        if (!withdrawal) {
+            return res.status(404).render('error', { message: 'Solicitud de retiro no encontrada.' });
+        }
+
         if (withdrawal.status === 'Pendiente' && status === 'Rechazado') {
             const tpysToReturn = Math.floor(withdrawal.amount / 100);
             await User.findByIdAndUpdate(withdrawal.userId, { $inc: { tpysBalance: tpysToReturn } });
         }
+
         withdrawal.status = status;
         await withdrawal.save();
+        
         res.redirect('/admin/withdrawals');
-    } catch (err) { next(err); }
+
+    } catch (err) {
+        next(err);
+    }
 });
 
 // =============================================

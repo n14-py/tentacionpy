@@ -1,28 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recargar Saldo - TentacionPY</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+
 <%- include('partials/header.html') %>
 
-<div class="page-header">
-    <h1>Añadir Fondos a tu Billetera</h1>
-    <a href="/settings" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver a Configuración</a>
-</div>
-
-<div class="form-container">
-    <h2>Tu Saldo Actual: <span style="color: var(--accent-color)"><%= currentUser.tpysBalance.toFixed(0) %> TPYS</span></h2>
-    <p>Simula una recarga de TPYS para poder comprar contenido en la plataforma.</p>
-    
-    <% if (locals.success) { %>
-        <div class="success-message"><%= success %></div>
-    <% } %>
-    <% if (locals.error) { %>
-        <div class="error-message"><%= error %></div>
-    <% } %>
-
-    <form action="/add-funds" method="POST">
-        <div class="form-group">
-            <label for="amount">Cantidad de TPYS a añadir</label>
-            <input type="number" id="amount" name="amount" required min="100" step="10" placeholder="Ej: 500">
+<main class="container">
+    <div class="add-funds-container">
+        <h2><i class="fas fa-gem"></i> Recargar Saldo de TPYS</h2>
+        <p>Elige uno de nuestros paquetes y paga de forma segura. Tu saldo se actualizará al instante.</p>
+        
+        <div id="payment-error" class="alert alert-danger" style="display:none;"></div>
+        
+        <div class="tpy-packages-grid">
+            <div class="tpy-package-card">
+                <h3>100 <i class="fas fa-gem"></i></h3>
+                <p class="price">Gs. 10.000</p>
+                <button class="btn btn-primary btn-block btn-buy-package" data-gs="10000" data-tpys="100">Comprar</button>
+            </div>
+            <div class="tpy-package-card">
+                <h3>300 <i class="fas fa-gem"></i></h3>
+                <p class="price">Gs. 30.000</p>
+                <button class="btn btn-primary btn-block btn-buy-package" data-gs="30000" data-tpys="300">Comprar</button>
+            </div>
+            <div class="tpy-package-card">
+                <h3>600 <i class="fas fa-gem"></i></h3>
+                <p class="price">Gs. 60.000</p>
+                <button class="btn btn-primary btn-block btn-buy-package" data-gs="60000" data-tpys="600">Comprar</button>
+            </div>
+            <div class="tpy-package-card popular">
+                <div class="popular-badge">Más Popular</div>
+                <h3>1.000 <i class="fas fa-gem"></i></h3>
+                <p class="price">Gs. 100.000</p>
+                <button class="btn btn-primary btn-block btn-buy-package" data-gs="100000" data-tpys="1000">Comprar</button>
+            </div>
+            <div class="tpy-package-card">
+                <h3>2.000 <i class="fas fa-gem"></i></h3>
+                <p class="price">Gs. 200.000</p>
+                <button class="btn btn-primary btn-block btn-buy-package" data-gs="200000" data-tpys="2000">Comprar</button>
+            </div>
         </div>
-        <button type="submit" class="btn btn-primary" style="width: 100%;">Añadir TPYS</button>
-    </form>
-</div>
+    </div>
+</main>
 
 <%- include('partials/footer.html') %>
+
+</body>
+</html>

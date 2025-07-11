@@ -379,3 +379,293 @@ body.chat-page-body { background-color: #0a0a0a; }
 .static-page-container ul {
     padding-left: 20px;
 }
+
+/* --- ESTILOS PARA PÁGINAS ESTÁTICAS Y MEJORAS --- */
+
+.page-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+.page-header h1 { color: var(--primary-color); }
+
+.fab {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    z-index: 999;
+    transition: all 0.2s ease;
+}
+.fab:hover { transform: scale(1.1); background-color: var(--primary-color-dark); }
+
+/* Notificaciones */
+.notifications-list { max-width: 800px; margin: 0 auto; }
+.notification-item {
+    background-color: var(--surface-color);
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+.notification-content { flex: 1; }
+.notification-content p { margin: 0; }
+.post-thumbnail-link .post-thumbnail {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 5px;
+}
+
+
+
+
+
+/* --- ESTILOS PARA LA PÁGINA DE RECARGA DE FONDOS --- */
+.add-funds-container {
+    max-width: 900px;
+    margin: 2rem auto;
+    text-align: center;
+}
+
+.tpy-packages-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.tpy-package-card {
+    background-color: var(--surface-color);
+    padding: 2rem 1.5rem;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.tpy-package-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--primary-color);
+}
+
+.tpy-package-card h3 {
+    font-size: 2.5rem;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.tpy-package-card .price {
+    font-size: 1.2rem;
+    color: var(--text-color);
+    font-weight: bold;
+    margin-bottom: 1.5rem;
+}
+
+.tpy-package-card .btn-buy-package {
+    width: 100%;
+}
+
+.tpy-package-card.popular {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 20px rgba(233, 30, 99, 0.3);
+}
+
+.popular-badge {
+    position: absolute;
+    top: 15px;
+    right: -30px;
+    background-color: var(--primary-color);
+    color: white;
+    padding: 5px 30px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    transform: rotate(45deg);
+}
+
+
+
+
+
+/* --- ESTILOS PARA EL PANEL DE ADMINISTRADOR --- */
+
+.admin-table-container {
+    background-color: var(--surface-color);
+    padding: 1.5rem;
+    border-radius: 8px;
+    overflow-x: auto; /* Permite scroll horizontal en móvil */
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.admin-table th,
+.admin-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.admin-table thead th {
+    background-color: var(--surface-light-color);
+    color: var(--text-color);
+    font-weight: bold;
+}
+
+.admin-table tbody tr:hover {
+    background-color: var(--surface-light-color);
+}
+
+.admin-table .details-cell {
+    font-size: 0.85rem;
+    line-height: 1.4;
+    max-width: 250px;
+}
+
+.admin-actions {
+    display: flex;
+    gap: 10px;
+}
+.admin-actions .btn-sm {
+    padding: 5px 10px;
+}
+.btn-success { background-color: var(--success-color); color: white; }
+
+
+
+
+
+/* --- ESTILOS MEJORADOS PARA LA SECCIÓN DE COMENTARIOS --- */
+
+/* Contenedor principal del formulario de comentarios */
+#comment-form {
+    background-color: var(--surface-light-color);
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+/* Área de texto para escribir el comentario */
+#comment-form textarea {
+    min-height: 80px;
+    background-color: var(--secondary-color);
+    border: 1px solid #555;
+    color: var(--text-color);
+    padding: 10px;
+    border-radius: 5px;
+    width: 100%;
+    resize: vertical; /* Permite al usuario ajustar la altura */
+}
+
+#comment-form textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 5px rgba(233, 30, 99, 0.5);
+}
+
+/* Contenedor para las acciones (donar y botón de comentar) */
+.comment-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+    flex-wrap: wrap; /* Para que se adapte en móviles */
+    gap: 1rem;
+}
+
+/* Estilos para el campo de donación de TPYS */
+.donation-input {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: var(--secondary-color);
+    padding: 5px 10px;
+    border-radius: 20px;
+}
+
+.donation-input label {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--text-muted-color);
+}
+
+.donation-input input[type="number"] {
+    width: 60px;
+    background: none;
+    border: none;
+    color: var(--text-color);
+    text-align: right;
+    font-weight: bold;
+    padding: 5px;
+    -moz-appearance: textfield; /* Para Firefox */
+}
+
+/* Ocultar las flechas del input number en Chrome, Safari, Edge, Opera */
+.donation-input input::-webkit-outer-spin-button,
+.donation-input input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.donation-input span {
+    color: var(--primary-color);
+    font-size: 1.1rem;
+}
+
+/* Separador visual */
+.comments-section hr {
+    margin: 1.5rem 0;
+}
+
+
+/* --- ESTILOS PARA LA SECCIÓN DE RECOMENDADOS --- */
+.recommended-section {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.recommended-section h2 {
+    text-align: center;
+    margin-bottom: 2rem;
+    color: var(--primary-color);
+}
+
+
+
+
+/* --- ESTILOS PARA LAS TARJETAS DE USUARIO --- */
+.user-card {
+    background-color: var(--surface-color);
+    border-radius: 8px;
+    overflow: hidden;
+    text-align: center;
+    border: 1px solid var(--border-color);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.user-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.3); }
+.user-card a { color: var(--text-color); display: block; }
+.user-card-image {
+    width: 100%;
+    height: 250px;
+    object-fit: cover;
+}
+.user-card-info { padding: 1rem; }
+.user-card-info strong { font-size: 1.2rem; display: block; margin-bottom: 0.5rem; }
+.user-card-info .location { color: var(--text-muted-color); }

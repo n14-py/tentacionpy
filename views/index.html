@@ -9,115 +9,125 @@
 </head>
 <body>
 
-<%# Esto ahora funcionará porque la ruta es relativa a la raíz de 'views' %>
 <%- include('partials/header.html') %>
 
 <main class="container">
+    
+    <form action="/feed" method="GET" class="main-search-form">
+        <div class="search-grid-main">
+            <div class="form-group">
+                <input type="text" name="q" class="form-control" placeholder="Buscar en anuncios gratuitos..." value="<%= query.q || '' %>">
+            </div>
+            <div class="form-group">
+                <select name="category" class="form-control">
+                    <option value="">Todas las Categorías</option>
+                    <% CATEGORIES.forEach(cat => { %>
+                        <option value="<%= cat %>" <%= query.category === cat ? 'selected' : '' %>><%= cat %></option>
+                    <% }); %>
+                </select>
+            </div>
+            <div class="form-group">
+                <select name="location" class="form-control">
+                    <option value="">Todas las Ubicaciones</option>
+                    <% CITIES.forEach(city => { %>
+                        <option value="<%= city %>" <%= query.location === city ? 'selected' : '' %>><%= city %></option>
+                    <% }); %>
+                </select>
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">Buscar</button>
+            </div>
+        </div>
+    </form>
+    
     <div class="feed-header">
-        <h2>Encuentra tu Tentación</h2>
         <button class="btn btn-secondary" id="advanced-search-toggle">Búsqueda Avanzada ▼</button>
     </div>
 
     <form action="/feed" method="GET" class="advanced-search-form" id="advanced-search-form" style="display: none;">
+        <h4>Búsqueda Específica</h4>
         <div class="search-grid">
             <div class="form-group">
-                <label for="q">Buscar por palabra clave</label>
-                <input type="text" name="q" id="q" class="form-control" placeholder="Ej: tatuajes, show..." value="<%= (locals.query && query.q) || '' %>">
-            </div>
-            <div class="form-group">
-                <label for="category">Categoría</label>
-                <select name="category" id="category" class="form-control">
-                    <option value="">Todas</option>
-                    <% if (locals.CATEGORIES) { %>
-                        <% CATEGORIES.forEach(cat => { %>
-                            <option value="<%= cat %>" <%= (locals.query && query.category === cat) ? 'selected' : '' %>><%= cat %></option>
-                        <% }); %>
-                    <% } %>
+                <label for="search_type">1. Elige qué buscar</label>
+                <select name="search_type" id="search_type" class="form-control">
+                    <option value="posts" <%= (resultType !== 'users') ? 'selected' : '' %>>Anuncios Pagados</option>
+                    <option value="users" <%= (resultType === 'users') ? 'selected' : '' %>>Usuarios</option>
                 </select>
             </div>
+
+            <div class="form-group" id="user-search-filters">
+                <label for="username">2. Busca por Nombre de Usuario</label>
+                <input type="text" name="username" id="username" class="form-control" placeholder="Ej: maria" value="<%= query.username || '' %>">
+            </div>
+            
             <div class="form-group">
-                <label for="gender">Género</label>
-                <select name="gender" id="gender" class="form-control">
+                 <label for="gender">Filtrar por Género</label>
+                 <select name="gender" id="gender" class="form-control">
                     <option value="">Todos</option>
-                    <option value="Mujer" <%= (locals.query && query.gender === 'Mujer') ? 'selected' : '' %>>Mujer</option>
-                    <option value="Hombre" <%= (locals.query && query.gender === 'Hombre') ? 'selected' : '' %>>Hombre</option>
-                    <option value="Trans" <%= (locals.query && query.gender === 'Trans') ? 'selected' : '' %>>Trans</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="location">Ubicación</label>
-                <select name="location" id="location" class="form-control">
-                    <option value="">Todas</option>
-                     <% if (locals.CITIES) { %>
-                        <% CITIES.forEach(city => { %>
-                            <option value="<%= city %>" <%= (locals.query && query.location === city) ? 'selected' : '' %>><%= city %></option>
-                        <% }); %>
-                    <% } %>
+                    <option value="Mujer" <%= query.gender === 'Mujer' ? 'selected' : '' %>>Mujer</option>
+                    <option value="Hombre" <%= query.gender === 'Hombre' ? 'selected' : '' %>>Hombre</option>
+                    <option value="Trans" <%= query.gender === 'Trans' ? 'selected' : '' %>>Trans</option>
                 </select>
             </div>
         </div>
+
+        <div class="form-group-checkbox" id="paid-content-filter">
+            <input type="checkbox" id="show_paid" name="show_paid" <%= query.show_paid === 'on' ? 'checked' : '' %>>
+            <label for="show_paid">Buscar solo videos de pago</label>
+        </div>
+
         <div class="search-actions">
-            <a href="/feed" class="btn btn-secondary">Limpiar Filtros</a>
-            <button type="submit" class="btn btn-primary">Aplicar Filtros</button>
+            <a href="/feed" class="btn btn-secondary">Limpiar Todo</a>
+            <button type="submit" class="btn btn-primary">Aplicar Filtros Avanzados</button>
         </div>
     </form>
 
+    <h3 class="results-title"><%= resultType === 'users' ? 'Resultados de Usuarios' : 'Anuncios Recientes' %></h3>
     <div class="post-grid">
-        <% if (posts && posts.length > 0) { %>
-            <% posts.forEach(post => { %>
-                <% 
-                   const isBoosted = post.boostedUntil && new Date(post.boostedUntil) > new Date();
-                   const boostColor = (isBoosted && post.boostOptions && post.boostOptions.color) ? post.boostOptions.color : '#E91E63';
-                   const boostLabel = (isBoosted && post.boostOptions && post.boostOptions.label) ? post.boostOptions.label : '';
-                %>
-                
-                <div class="post-card <%= isBoosted ? 'boosted' : '' %>" <% if (isBoosted) { %>style="--boost-color: <%= boostColor %>"<% } %>>
-                    
-                    <% if(isBoosted && boostLabel) { %>
-                        <div class="boost-label"><%= boostLabel %></div>
-                    <% } %>
-
-                    <a href="/anuncio/<%= post._id %>" class="post-card-link">
-                        <% if (post.files && post.files.length > 0) { %>
-                           <img src="<%= post.files[0] %>" alt="Post de <%= (post.userId && post.userId.username) || 'Usuario' %>" class="post-card-image">
-                        <% } else { %>
-                           <img src="/img/placeholder.png" alt="Imagen no disponible" class="post-card-image">
-                        <% } %>
-                        
-                        <% if (post.isSubscriberOnly || (post.type === 'video' && post.price > 0)) { %>
-                           <div class="content-lock-icon"><i class="fas fa-lock"></i></div>
-                        <% } %>
-
-                        <% if (post.type === 'video') { %>
-                            <div class="video-overlay"><i class="fas fa-play"></i></div>
-                        <% } %>
-                    </a>
-                    
-                    <div class="post-card-info">
-                        <% if (post.userId) { %>
-                            <a href="/user/<%= post.userId.username %>" class="post-card-user">
-                                <img src="<%= post.userId.profilePic %>" alt="<%= post.userId.username %>" class="avatar">
-                                <span><%= post.userId.username %></span>
-                            </a>
-                        <% } %>
-                        <div class="post-card-stats">
-                            <span><i class="fas fa-heart"></i> <%= post.likes ? post.likes.length : 0 %></span>
-                            <span><i class="fas fa-eye"></i> <%= post.views || 0 %></span>
-                        </div>
-                    </div>
-                </div>
-            <% }); %>
+        <% if (results && results.length > 0) { %>
+            <% if (resultType === 'users') { %>
+                <% results.forEach(user => { %>
+                    <%- include('partials/user-card.html', {user: user}) %>
+                <% }); %>
+            <% } else { %>
+                <% results.forEach(post => { %>
+                    <%- include('partials/post-card.html', {post: post}) %>
+                <% }); %>
+            <% } %>
         <% } else { %>
             <div class="no-results-card">
                 <h3>No se encontraron resultados</h3>
-                <p>Prueba a cambiar los filtros o a realizar una nueva búsqueda.</p>
-                <a href="/feed" class="btn btn-primary">Ver todos los anuncios</a>
+                <p>Intenta con otros filtros o <a href="/feed">refresca el feed</a>.</p>
             </div>
         <% } %>
     </div>
+
+    <% if (totalPages && totalPages > 1) { %>
+        <nav class="pagination-container">
+            <ul class="pagination">
+                <% 
+                   const queryParams = new URLSearchParams(query);
+                   queryParams.delete('page');
+                   const queryString = queryParams.toString();
+                %>
+                <% if (currentPage > 1) { %>
+                    <li class="page-item"><a class="page-link" href="/feed?page=<%= currentPage - 1 %><% if (queryString) { %>&<%= queryString %><% } %>">Anterior</a></li>
+                <% } %>
+                <% for(let i = 1; i <= totalPages; i++) { %>
+                    <li class="page-item <%= i === currentPage ? 'active' : '' %>"><a class="page-link" href="/feed?page=<%= i %><% if (queryString) { %>&<%= queryString %><% } %>"><%= i %></a></li>
+                <% } %>
+                <% if (currentPage < totalPages) { %>
+                    <li class="page-item"><a class="page-link" href="/feed?page=<%= currentPage + 1 %><% if (queryString) { %>&<%= queryString %><% } %>">Siguiente</a></li>
+                <% } %>
+            </ul>
+        </nav>
+    <% } %>
 </main>
 
-<%# Esto ahora funcionará porque la ruta es relativa a la raíz de 'views' %>
+<% if (currentUser) { %>
+    <a href="/new-post" class="fab" title="Crear Anuncio"><i class="fas fa-plus"></i></a>
+<% } %>
+
 <%- include('partials/footer.html') %>
 
 <script>
@@ -125,10 +135,11 @@
         const toggleButton = document.getElementById('advanced-search-toggle');
         const searchForm = document.getElementById('advanced-search-form');
         
+        // --- Lógica para mostrar/ocultar Búsqueda Avanzada ---
         if(toggleButton && searchForm) {
+            // Revisa si hay filtros avanzados activos para mostrar el formulario al cargar
             const urlParams = new URLSearchParams(window.location.search);
-            const hasFilter = urlParams.get('q') || urlParams.get('category') || urlParams.get('gender') || urlParams.get('location');
-            if (hasFilter) {
+            if (urlParams.has('username') || urlParams.has('gender') || urlParams.has('show_paid')) {
                  searchForm.style.display = 'block';
                  toggleButton.innerHTML = 'Búsqueda Avanzada ▲';
             }
@@ -138,6 +149,29 @@
                 searchForm.style.display = isHidden ? 'block' : 'none';
                 toggleButton.innerHTML = isHidden ? 'Búsqueda Avanzada ▲' : 'Búsqueda Avanzada ▼';
             });
+        }
+
+        // --- Lógica para el formulario avanzado ---
+        const searchTypeSelect = document.getElementById('search_type');
+        const userSearchFilters = document.getElementById('user-search-filters');
+        const paidContentFilter = document.getElementById('paid-content-filter');
+        
+        function toggleAdvancedFilters() {
+            if (!searchTypeSelect) return;
+            // Si se busca "usuarios", se muestra el campo de nombre de usuario y se oculta el de "contenido de pago"
+            if (searchTypeSelect.value === 'users') {
+                if(userSearchFilters) userSearchFilters.style.display = 'block';
+                if(paidContentFilter) paidContentFilter.style.display = 'none';
+            } else { // Si se busca "posts"
+                if(userSearchFilters) userSearchFilters.style.display = 'none';
+                if(paidContentFilter) paidContentFilter.style.display = 'flex';
+            }
+        }
+        
+        if(searchTypeSelect) {
+            searchTypeSelect.addEventListener('change', toggleAdvancedFilters);
+            // Ejecutar al cargar la página para establecer el estado inicial correcto
+            toggleAdvancedFilters();
         }
     });
 </script>

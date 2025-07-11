@@ -1,116 +1,59 @@
-<%- include('partials/header.html') %>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notificaciones - TentacionPY</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+    <%- include('partials/header.html') %>
 
-<div class="page-header">
-    <h1>Notificaciones</h1>
-    <% if(notifications && notifications.length > 0) { %>
-        <p>Aquí está tu actividad más reciente.</p>
-    <% } %>
-</div>
-
-<div class="notifications-container">
-    <% if(notifications && notifications.length > 0) { %>
-        <ul class="notification-list">
-            <% notifications.forEach(notif => { %>
-                <li class="notification-item <%= !notif.isRead ? 'unread' : '' %>">
-                    <% if (notif.actorId) { %>
-                    <a href="/user/<%= notif.actorId._id %>" class="actor-link">
-                        <img src="<%= notif.actorId.profilePic %>" alt="perfil de <%= notif.actorId.username %>" class="actor-pic">
-                    </a>
-                    <% } %>
-                    <div class="notification-content">
-                        <p>
-                            <% if (notif.actorId) { %>
-                                <strong><%= notif.actorId.username %></strong>
-                            <% } %>
-                            
-                            <% if(notif.type === 'like') { %> te ha dado like en
-                            <% } else if(notif.type === 'comment') { %> ha comentado en
-                            <% } else if(notif.type === 'follow') { %> ha comenzado a seguirte.
-                            <% } else if(notif.type === 'subscribe') { %> se ha suscrito a tu perfil. ¡Felicidades!
-                            <% } else if(notif.type === 'sale') { %> ha comprado tu video
-                            <% } else if(notif.type === 'donation') { %> te ha donado en
-                            <% } %>
-
-                            <% if (notif.postId && ['like', 'comment', 'sale', 'donation'].includes(notif.type)) { %>
-                                <a href="/<%= notif.postId.type === 'image' ? 'anuncio' : 'post' %>/<%= notif.postId._id %>" class="notification-post-link">"<%= notif.postId.description.substring(0, 30) %>..."</a>
-                            <% } %>
-                        </p>
-                        <span class="timestamp"><%= formatDate(notif.createdAt) %></span>
+    <main class="container">
+        <h2>Tus Notificaciones</h2>
+        <div class="notification-list">
+            <% if (notifications && notifications.length > 0) { %>
+                <% notifications.forEach(notif => { %>
+                    <div class="notification-item <%= !notif.isRead ? 'unread' : '' %>">
+                        
+                        <% if (notif.actorId) { %>
+                            <img src="<%= notif.actorId.profilePic %>" alt="avatar" class="avatar">
+                        <% } else { %>
+                            <img src="/img/default.png" alt="avatar" class="avatar">
+                        <% } %>
+                        <div class="notification-content">
+                            <p>
+                                <% if (notif.actorId) { %>
+                                    <strong><%= notif.actorId.username %></strong>
+                                <% } else { %>
+                                    <strong>Un usuario</strong>
+                                <% } %>
+                                <%= notif.message %>
+                                
+                                <% if (notif.postId && notif.postId.files && notif.postId.files.length > 0) { %>
+                                    <a href="/anuncio/<%= notif.postId._id %>" class="notification-post-link">ver la publicación.</a>
+                                <% } %>
+                            </p>
+                            <small class="text-muted"><%= formatDate(notif.createdAt) %></small>
+                        </div>
+                        
+                        <% if (notif.postId && notif.postId.files && notif.postId.files.length > 0) { %>
+                            <a href="/anuncio/<%= notif.postId._id %>">
+                                <img src="<%= notif.postId.files[0].replace('/upload/', '/upload/w_100,h_100,c_fill/') %>" alt="post-thumbnail" class="notification-thumbnail">
+                            </a>
+                        <% } %>
                     </div>
-                     <% if (notif.postId && ['like', 'comment', 'sale', 'donation'].includes(notif.type) && notif.postId.files.length > 0) { %>
-                        <a href="/<%= notif.postId.type === 'image' ? 'anuncio' : 'post' %>/<%= notif.postId._id %>" class="post-thumbnail-link">
-                             <% if(notif.postId.type === 'image') { %>
-                                <img src="<%= notif.postId.files[0] %>" alt="post thumbnail" class="post-thumbnail">
-                             <% } else { %>
-                                <video src="<%= notif.postId.files[0] %>#t=1" muted preload="metadata" class="post-thumbnail"></video>
-                             <% } %>
-                        </a>
-                    <% } %>
-                </li>
-            <% }) %>
-        </ul>
-    <% } else { %>
-        <p style="text-align: center; color: var(--light-gray); padding: 2rem;">No tienes notificaciones nuevas.</p>
-    <% } %>
-</div>
+                <% }); %>
+            <% } else { %>
+                <div class="no-results-card">
+                    <h3>No tienes notificaciones</h3>
+                    <p>Cuando otros usuarios interactúen contigo, aparecerán aquí.</p>
+                </div>
+            <% } %>
+        </div>
+    </main>
 
-<style>
-    .notifications-container {
-        max-width: 800px;
-        margin: 0 auto;
-        background: var(--secondary-color);
-        padding: 0;
-        border-radius: var(--border-radius-soft);
-        overflow: hidden;
-    }
-    .notification-list {
-        list-style: none;
-        padding: 0;
-    }
-    .notification-item {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        padding: 1rem;
-        border-bottom: 1px solid #333;
-        transition: background-color 0.2s;
-    }
-    .notification-item:last-child {
-        border-bottom: none;
-    }
-    .notification-item.unread {
-        background-color: rgba(228, 0, 124, 0.08);
-        border-left: 3px solid var(--accent-color);
-        padding-left: calc(1rem - 3px);
-    }
-    .notification-item .actor-pic {
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        object-fit: cover;
-    }
-    .notification-content {
-        flex-grow: 1;
-    }
-    .notification-content p {
-        margin: 0;
-        font-size: 0.9rem;
-        color: var(--text-color);
-    }
-    .notification-content .timestamp {
-        font-size: 0.8rem;
-        color: var(--light-gray);
-    }
-    .notification-post-link {
-        font-style: italic;
-        color: var(--light-gray);
-    }
-    .post-thumbnail-link .post-thumbnail {
-        width: 50px;
-        height: 50px;
-        object-fit: cover;
-        border-radius: 8px;
-    }
-</style>
-
-<%- include('partials/footer.html') %>
+    <%- include('partials/footer.html') %>
+</body>
+</html>
