@@ -1,3 +1,8 @@
+// =============================================
+//               PUBLIC/JS/MAIN.JS
+//        VERSIÓN CORREGIDA Y UNIFICADA
+// =============================================
+
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- OBTENER SALDO ACTUAL ---
@@ -12,11 +17,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- MENÚS DE NAVEGACIÓN ---
-    const userMenuTrigger = document.getElementById('user-menu-trigger');
+    const userMenuTrigger = document.getElementById('user-avatar-toggle');
     const userDropdownMenu = document.getElementById('user-dropdown-menu');
-    const mobileMenuTrigger = document.getElementById('mobile-menu-trigger');
+    const mobileMenuTrigger = document.getElementById('mobile-menu-open');
     const mobileNav = document.getElementById('mobile-nav');
-    const closeMobileMenu = document.getElementById('close-mobile-menu');
+    const closeMobileMenu = document.getElementById('mobile-menu-close');
 
     if (userMenuTrigger) {
         userMenuTrigger.addEventListener('click', (e) => {
@@ -61,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
             modal.style.display = 'flex';
         };
         const hideModal = () => {
-            if(modal) modal.style.display = 'none';
+            if (modal) modal.style.display = 'none';
         };
         modalConfirmBtn.addEventListener('click', () => { if (confirmCallback) confirmCallback(); });
         modalCancelBtn.addEventListener('click', hideModal);
@@ -70,57 +75,172 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // --- DELEGACIÓN DE EVENTOS ---
+    // --- DELEGACIÓN DE EVENTOS PRINCIPAL ---
     document.body.addEventListener('click', async (e) => {
         const buyBtn = e.target.closest('.btn-buy-video');
+        const subBtn = e.target.closest('.btn-subscribe');
+        const likeBtn = e.target.closest('.btn-like');
+        const deleteBtn = e.target.closest('.btn-delete-post');
+        const followBtn = e.target.closest('.btn-follow, .follow-button'); // Incluye ambas clases
+        const blockBtn = e.target.closest('.btn-block-user, #block-user-btn'); // Incluye ambos
+        const unblockBtn = e.target.closest('.btn-unblock');
+
         if (buyBtn) {
             e.preventDefault();
             const { postId, price } = buyBtn.dataset;
             const finalBalance = currentUserBalance - parseInt(price);
             showModal({
-                title: 'Confirmar Compra', message: `Comprar video por <strong>${price} 💎</strong>?`,
-                balanceInfo: `Saldo después: <strong>${finalBalance.toLocaleString('es-PY')} 💎</strong>.`, confirmText: 'Comprar',
+                title: 'Confirmar Compra',
+                message: `Comprar video por <strong>${price} 💎</strong>?`,
+                balanceInfo: `Saldo después: <strong>${finalBalance.toLocaleString('es-PY')} 💎</strong>.`,
+                confirmText: 'Comprar',
                 onConfirm: () => makeApiCall(`/buy-video/${postId}`, 'POST', {}, '¡Compra exitosa!', true)
             });
         }
         
-        const subBtn = e.target.closest('.btn-subscribe');
         if (subBtn) {
             e.preventDefault();
             const { creatorId, price, creatorName } = subBtn.dataset;
             const finalBalance = currentUserBalance - parseInt(price);
             showModal({
-                title: 'Confirmar Suscripción', message: `Suscribirte a <strong>${creatorName}</strong> por <strong>${price} 💎</strong>/mes?`,
-                balanceInfo: `Saldo después: <strong>${finalBalance.toLocaleString('es-PY')} 💎</strong>.`, confirmText: 'Suscribir',
+                title: 'Confirmar Suscripción',
+                message: `Suscribirte a <strong>${creatorName}</strong> por <strong>${price} 💎</strong>/mes?`,
+                balanceInfo: `Saldo después: <strong>${finalBalance.toLocaleString('es-PY')} 💎</strong>.`,
+                confirmText: 'Suscribir',
+                // ## CORRECCIÓN ## La ruta correcta es /user/:id/subscribe
                 onConfirm: () => makeApiCall(`/user/${creatorId}/subscribe`, 'POST', {}, '¡Suscripción exitosa!', true)
             });
         }
         
-        const likeBtn = e.target.closest('.btn-like');
         if(likeBtn) {
             e.preventDefault();
             const postId = likeBtn.dataset.postId;
-            const response = await fetch(`/post/${postId}/like`, { method: 'POST' });
-            const data = await response.json();
-            if (data.success) {
-                const likeCountSpan = likeBtn.querySelector('#like-count') || likeBtn.querySelector('span');
-                if (likeCountSpan) likeCountSpan.textContent = data.likes;
-                likeBtn.classList.toggle('liked', data.liked);
+            try {
+                // ## CORRECCIÓN ## La ruta correcta es /post/:id/like
+                const response = await fetch(`/post/${postId}/like`, { 
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    const likeCountSpan = likeBtn.querySelector('.like-count, #like-count, span'); // Selector más robusto
+                    if (likeCountSpan) {
+                        likeCountSpan.textContent = data.likes;
+                    }
+                    likeBtn.classList.toggle('liked', data.liked);
+                    // Lógica adicional para cambiar el icono si es necesario
+                    const icon = likeBtn.querySelector('i');
+                    if(icon) {
+                       icon.classList.toggle('fas', data.liked); // Corazón lleno
+                       icon.classList.toggle('far', !data.liked); // Corazón vacío (si usas FontAwesome Pro)
+                    }
+                }
+            } catch (err) {
+                console.error("Error en la solicitud de like:", err);
             }
         }
 
-        const deleteBtn = e.target.closest('.btn-delete-post');
         if (deleteBtn) {
             e.preventDefault();
             const { postId } = deleteBtn.dataset;
             showModal({
-                title: 'Eliminar Anuncio', message: `¿Estás seguro de eliminar este anuncio permanentemente?`,
-                balanceInfo: '', confirmText: 'Sí, eliminar',
+                title: 'Eliminar Anuncio',
+                message: `¿Estás seguro de eliminar este anuncio permanentemente?`,
+                balanceInfo: '',
+                confirmText: 'Sí, eliminar',
+                // ## CORRECIÓN ## La ruta correcta es /post/:id/delete
                 onConfirm: () => makeApiCall(`/post/${postId}/delete`, 'POST', {}, 'Anuncio eliminado.', true)
             });
         }
+        
+        if (followBtn) {
+            e.preventDefault();
+            const { userId } = followBtn.dataset;
+            // La ruta /user/:id/follow se usa en el backend para el <form>, no para fetch.
+            // Para JS, es mejor una ruta que devuelva JSON. Asumiremos que el backend la tiene.
+            // Si no, la acción del formulario recargará la página, lo cual también es válido.
+            // Por ahora, asumimos que el <form> es la vía principal.
+            followBtn.closest('form').submit();
+        }
+
+        if (blockBtn) {
+            e.preventDefault();
+            const { userId } = blockBtn.dataset;
+            const message = '¿Estás seguro de que quieres bloquear a este usuario? No podrán ver sus perfiles mutuamente y se dejarán de seguir.';
+            
+            showModal({
+                title: 'Bloquear Usuario',
+                message: message,
+                balanceInfo: '',
+                confirmText: 'Sí, bloquear',
+                onConfirm: () => makeApiCall(`/user/${userId}/block`, 'POST', {}, `Usuario bloqueado.`, true)
+            });
+        }
+
+        if (unblockBtn) {
+            e.preventDefault();
+            const { userId } = unblockBtn.dataset;
+            const data = await makeApiCall(`/user/${userId}/block`, 'POST', {}, '', false);
+            if (data && data.success) {
+                const userElement = unblockBtn.closest('.user-list-item');
+                if (userElement) userElement.remove();
+            }
+        }
     });
 
+    // --- LÓGICA DE COMPARTIR (UNIFICADA) ---
+    const shareModal = document.getElementById('share-modal');
+    if (shareModal) {
+        const closeModalBtn = document.getElementById('share-modal-close');
+        const shareLinkInput = document.getElementById('share-link-input');
+        const copyLinkBtn = document.getElementById('copy-link-btn');
+        const whatsappBtn = document.getElementById('whatsapp-share-btn');
+        const pageHost = window.location.origin;
+
+        const openShareModal = (postUrl) => {
+            const fullUrl = pageHost + postUrl;
+            shareLinkInput.value = fullUrl;
+            const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent('¡Mira esta publicación! ' + fullUrl)}`;
+            whatsappBtn.href = whatsappUrl;
+            shareModal.classList.add('active');
+        };
+
+        const closeShareModal = () => shareModal.classList.remove('active');
+
+        document.body.addEventListener('click', async (e) => {
+            const shareButton = e.target.closest('.share-btn');
+            if (!shareButton) return;
+            
+            e.preventDefault();
+            const postUrl = shareButton.dataset.postUrl;
+            if (!postUrl) return;
+
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: 'Mira esta publicación en TentacionPY',
+                        url: pageHost + postUrl,
+                    });
+                } catch (err) {
+                    if (err.name !== 'AbortError') openShareModal(postUrl);
+                }
+            } else {
+                openShareModal(postUrl);
+            }
+        });
+
+        closeModalBtn.addEventListener('click', closeShareModal);
+        shareModal.addEventListener('click', (e) => { if (e.target === shareModal) closeShareModal(); });
+        
+        copyLinkBtn.addEventListener('click', () => {
+            shareLinkInput.select();
+            document.execCommand('copy');
+            copyLinkBtn.textContent = '¡Copiado!';
+            setTimeout(() => { copyLinkBtn.textContent = 'Copiar'; }, 2000);
+        });
+    }
+
+    // --- OTRAS FUNCIONALIDADES DEL SITIO ---
     const boostBtn = document.getElementById('boost-post-btn');
     if (boostBtn) {
         boostBtn.addEventListener('click', (e) => {
@@ -132,20 +252,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="form-group"><label for="boost-color">Elige un color:</label><input type="color" name="boostColor" id="boost-color" value="#E91E63" class="form-control-color"></div>
                 </form>`;
             showModal({
-                title: 'Promocionar Anuncio', message: 'Elige un plan para destacar tu anuncio en el feed.',
-                htmlContent: boostFormHtml, confirmText: 'Promocionar',
+                title: 'Promocionar Anuncio',
+                message: 'Elige un plan para destacar tu anuncio en el feed.',
+                htmlContent: boostFormHtml,
+                confirmText: 'Promocionar',
                 onConfirm: () => {
                     const form = document.getElementById('dynamic-boost-form');
                     const formData = new FormData(form);
                     const body = Object.fromEntries(formData.entries());
-                    const postId = window.location.pathname.split('/').pop();
+                    const postId = window.location.pathname.split('/anuncio/').pop();
                     makeApiCall(`/post/${postId}/boost`, 'POST', body, '¡Anuncio promocionado!', true);
                 }
             });
         });
     }
 
-    // --- LÓGICA PARA RECARGAR FONDOS (NUEVA VERSIÓN CON TARJETAS) ---
     const packagesGrid = document.querySelector('.tpy-packages-grid');
     if (packagesGrid) {
         packagesGrid.addEventListener('click', async (e) => {
@@ -176,31 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-
-
-    // --- LÓGICA PARA ALTERNAR FILTROS DE BÚSQUEDA ---
-    const searchTypeSelect = document.getElementById('search_type');
-    const postsFilters = document.getElementById('posts-filters');
-    const paidContentFilter = document.getElementById('paid-content-filter');
-
-    function toggleSearchFilters() {
-        if (!searchTypeSelect) return;
-        
-        if (searchTypeSelect.value === 'users') {
-            if(postsFilters) postsFilters.style.display = 'none';
-            if(paidContentFilter) paidContentFilter.style.display = 'none';
-        } else {
-            if(postsFilters) postsFilters.style.display = 'block';
-            if(paidContentFilter) paidContentFilter.style.display = 'flex';
-        }
-    }
-    if(searchTypeSelect) {
-        searchTypeSelect.addEventListener('change', toggleSearchFilters);
-        toggleSearchFilters(); // Ejecutar al cargar la página
-    }
-
-
-    // --- LÓGICA PARA "VER MÁS" COMENTARIOS ---
+    
     const showMoreBtn = document.getElementById('show-more-comments');
     if (showMoreBtn) {
         showMoreBtn.addEventListener('click', () => {
@@ -217,15 +314,25 @@ document.addEventListener('DOMContentLoaded', () => {
             const options = {
                 method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
             };
+            if (method !== 'GET') {
+                options.body = JSON.stringify(body);
+            }
             const response = await fetch(url, options);
             const data = await response.json();
             if (!response.ok) throw new Error(data.message || 'Ocurrió un error');
-            if (successMessage) alert(successMessage);
+            
+            if (successMessage) {
+                // Idealmente, usar un modal de notificación en lugar de alert
+                alert(successMessage);
+            }
+
             if (reloadPage) {
-                // Redirige si la API lo indica, si no, recarga la página actual.
-                window.location.href = data.redirectUrl || window.location.pathname;
+                if (data.redirectUrl) {
+                    window.location.href = data.redirectUrl;
+                } else {
+                    window.location.reload();
+                }
             }
             return data;
         } catch (err) {

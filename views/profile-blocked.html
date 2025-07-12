@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usuario no disponible - TentacionPY</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+    <%- include('partials/header.html') %>
+
+    <main class="container">
+        <div class="error-container text-center">
+            <i class="fas fa-user-lock fa-3x" style="margin-bottom: 20px;"></i>
+            <h2>Contenido no disponible</h2>
+            <p>No puedes ver el perfil de <strong><%= username %></strong> porque existe un bloqueo mutuo o unilateral.</p>
+            <a href="/feed" class="btn btn-primary">Volver al inicio</a>
+        </div>
+    </main>
+
+    <%- include('partials/footer.html') %>
+</body>
+</html>

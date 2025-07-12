@@ -28,10 +28,14 @@
             </div>
 
             <div class="profile-stats">
-                <span><strong><%= posts ? posts.length : 0 %></strong> publicaciones</span>
-                <span><strong><%= userProfile.followers ? userProfile.followers.length : 0 %></strong> seguidores</span>
-                <span><strong><%= userProfile.following ? userProfile.following.length : 0 %></strong> siguiendo</span>
-            </div>
+    <span><strong><%= posts ? posts.length : 0 %></strong> publicaciones</span>
+    <a href="/user/<%= userProfile.username %>/list/followers">
+        <strong><%= userProfile.followers ? userProfile.followers.length : 0 %></strong> seguidores
+    </a>
+    <a href="/user/<%= userProfile.username %>/list/following">
+        <strong><%= userProfile.following ? userProfile.following.length : 0 %></strong> siguiendo
+    </a>
+</div>
             
             <% if (userProfile.bio) { %>
                 <p class="profile-bio"><%= userProfile.bio %></p>

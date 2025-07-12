@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reportar - TentacionPY</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <%- include('partials/header.html') %>
+
+    <main class="main-container form-container">
+        <form action="/report" method="POST" class="form-card">
+            <h1>Reportar <%= type === 'user' ? 'Usuario' : 'Publicación' %></h1>
+            <p>Ayúdanos a mantener la comunidad segura. Tu reporte es anónimo.</p>
+            
+            <input type="hidden" name="type" value="<%= type %>">
+            <input type="hidden" name="id" value="<%= id %>">
+
+            <div class="form-group">
+                <label for="category">Motivo del reporte:</label>
+                <select name="category" id="category" required>
+                    <% REPORT_CATEGORIES.forEach(category => { %>
+                        <option value="<%= category %>"><%= category %></option>
+                    <% }); %>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="reason">Describe el problema (opcional):</label>
+                <textarea name="reason" id="reason" rows="4" placeholder="Añade más detalles aquí..."></textarea>
+            </div>
+            
+            <button type="submit" class="btn btn-danger">Enviar Reporte</button>
+        </form>
+    </main>
+
+    <%- include('partials/footer.html') %>
+</body>
+</html>

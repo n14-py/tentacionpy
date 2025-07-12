@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - TentacionPY</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<%- include('partials/header.html') %>
+<main class="container">
+    <h1><%= title %></h1>
+    <a href="/user/<%= profileUser.username %>" class="btn btn-secondary">Volver al perfil</a>
+    <hr>
+    <% if (users && users.length > 0) { %>
+        <div class="user-list">
+            <% users.forEach(userToList => { %>
+                <div class="user-list-item">
+                    <a href="/user/<%= userToList.username %>">
+                        <img src="<%= userToList.profilePic %>" alt="Avatar">
+                        <strong><%= userToList.username %></strong>
+                    </a>
+                    <% if (currentUser && currentUser._id.equals(profileUser._id) && listType === 'following') { %>
+                        <form action="/user/<%= userToList._id %>/follow" method="POST">
+                            <button class="btn btn-danger" type="submit">Dejar de Seguir</button>
+                        </form>
+                    <% } %>
+                </div>
+            <% }); %>
+        </div>
+    <% } else { %>
+        <p>Esta lista está vacía.</p>
+    <% } %>
+</main>
+<%- include('partials/footer.html') %>
+</body>
+</html>

@@ -9,172 +9,135 @@
 </head>
 <body>
 
-<%- include('partials/header.html') %>
+    <%- include('partials/header.html') %>
 
-<main class="container">
-    
-    <form action="/feed" method="GET" class="main-search-form">
-        <div class="search-grid-main">
-            <div class="form-group">
-                <input type="text" name="q" class="form-control" placeholder="Buscar en anuncios gratuitos..." value="<%= query.q || '' %>">
+    <main class="container">
+        <div class="feed-header">
+            <h2>Encuentra tu Tentación</h2>
+            <button class="btn btn-secondary" id="advanced-search-toggle">Búsqueda Avanzada ▼</button>
+        </div>
+
+        <form action="/feed" method="GET" class="advanced-search-form" id="advanced-search-form" style="display: none;">
+            <div class="search-grid">
+                <div class="form-group">
+                    <label for="search_type">Buscar en:</label>
+                    <select name="search_type" id="search_type" class="form-control">
+                        <option value="posts" <%= (query.search_type !== 'users') ? 'selected' : '' %>>Anuncios</option>
+                        <option value="users" <%= (query.search_type === 'users') ? 'selected' : '' %>>Usuarios</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="q">Palabra Clave</label>
+                    <input type="text" name="q" id="q" class="form-control" placeholder="Ej: rubia, tatuajes..." value="<%= query.q || '' %>">
+                </div>
+                <div class="form-group">
+                    <label for="category">Categoría</label>
+                    <select name="category" id="category" class="form-control">
+                        <option value="">Todas</option>
+                        <% CATEGORIES.forEach(cat => { %>
+                            <option value="<%= cat %>" <%= (query.category === cat) ? 'selected' : '' %>><%= cat %></option>
+                        <% }); %>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="location">Ubicación</label>
+                    <select name="location" id="location" class="form-control">
+                        <option value="">Todas</option>
+                        <% CITIES.forEach(city => { %>
+                            <option value="<%= city %>" <%= (query.location === city) ? 'selected' : '' %>><%= city %></option>
+                        <% }); %>
+                    </select>
+                </div>
             </div>
-            <div class="form-group">
-                <select name="category" class="form-control">
-                    <option value="">Todas las Categorías</option>
-                    <% CATEGORIES.forEach(cat => { %>
-                        <option value="<%= cat %>" <%= query.category === cat ? 'selected' : '' %>><%= cat %></option>
+            <div class="search-actions">
+                <a href="/feed" class="btn btn-secondary">Limpiar Filtros</a>
+                <button type="submit" class="btn btn-primary">Aplicar Búsqueda</button>
+            </div>
+        </form>
+
+        <div class="post-grid">
+            <% if (results && results.length > 0) { %>
+                <% if (resultType === 'users') { %>
+                    <% results.forEach(user => { %>
+                        <%- include('partials/user-card.html', { user: user }) %>
                     <% }); %>
-                </select>
-            </div>
-            <div class="form-group">
-                <select name="location" class="form-control">
-                    <option value="">Todas las Ubicaciones</option>
-                    <% CITIES.forEach(city => { %>
-                        <option value="<%= city %>" <%= query.location === city ? 'selected' : '' %>><%= city %></option>
+                <% } else { %>
+                    <% results.forEach(post => { %>
+                        <%- include('partials/post-card.html', { post: post }) %>
                     <% }); %>
-                </select>
-            </div>
-            <div class="form-group">
-                <button type="submit" class="btn btn-primary">Buscar</button>
-            </div>
-        </div>
-    </form>
-    
-    <div class="feed-header">
-        <button class="btn btn-secondary" id="advanced-search-toggle">Búsqueda Avanzada ▼</button>
-    </div>
-
-    <form action="/feed" method="GET" class="advanced-search-form" id="advanced-search-form" style="display: none;">
-        <h4>Búsqueda Específica</h4>
-        <div class="search-grid">
-            <div class="form-group">
-                <label for="search_type">1. Elige qué buscar</label>
-                <select name="search_type" id="search_type" class="form-control">
-                    <option value="posts" <%= (resultType !== 'users') ? 'selected' : '' %>>Anuncios Pagados</option>
-                    <option value="users" <%= (resultType === 'users') ? 'selected' : '' %>>Usuarios</option>
-                </select>
-            </div>
-
-            <div class="form-group" id="user-search-filters">
-                <label for="username">2. Busca por Nombre de Usuario</label>
-                <input type="text" name="username" id="username" class="form-control" placeholder="Ej: maria" value="<%= query.username || '' %>">
-            </div>
-            
-            <div class="form-group">
-                 <label for="gender">Filtrar por Género</label>
-                 <select name="gender" id="gender" class="form-control">
-                    <option value="">Todos</option>
-                    <option value="Mujer" <%= query.gender === 'Mujer' ? 'selected' : '' %>>Mujer</option>
-                    <option value="Hombre" <%= query.gender === 'Hombre' ? 'selected' : '' %>>Hombre</option>
-                    <option value="Trans" <%= query.gender === 'Trans' ? 'selected' : '' %>>Trans</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="form-group-checkbox" id="paid-content-filter">
-            <input type="checkbox" id="show_paid" name="show_paid" <%= query.show_paid === 'on' ? 'checked' : '' %>>
-            <label for="show_paid">Buscar solo videos de pago</label>
-        </div>
-
-        <div class="search-actions">
-            <a href="/feed" class="btn btn-secondary">Limpiar Todo</a>
-            <button type="submit" class="btn btn-primary">Aplicar Filtros Avanzados</button>
-        </div>
-    </form>
-
-    <h3 class="results-title"><%= resultType === 'users' ? 'Resultados de Usuarios' : 'Anuncios Recientes' %></h3>
-    <div class="post-grid">
-        <% if (results && results.length > 0) { %>
-            <% if (resultType === 'users') { %>
-                <% results.forEach(user => { %>
-                    <%- include('partials/user-card.html', {user: user}) %>
-                <% }); %>
+                <% } %>
             <% } else { %>
-                <% results.forEach(post => { %>
-                    <%- include('partials/post-card.html', {post: post}) %>
-                <% }); %>
+                <div class="no-results-card">
+                    <h3>No se encontraron resultados</h3>
+                    <p>Prueba con otros filtros de búsqueda.</p>
+                </div>
             <% } %>
-        <% } else { %>
-            <div class="no-results-card">
-                <h3>No se encontraron resultados</h3>
-                <p>Intenta con otros filtros o <a href="/feed">refresca el feed</a>.</p>
-            </div>
+        </div>
+
+        <% if (totalPages > 1) { %>
+            <nav class="pagination-container">
+                <ul class="pagination">
+                    <% const urlParams = new URLSearchParams(query); %>
+                    <% if (currentPage > 1) { %>
+                        <% urlParams.set('page', currentPage - 1); %>
+                        <li class="page-item"><a class="page-link" href="/feed?<%= urlParams.toString() %>">Anterior</a></li>
+                    <% } %>
+                    <% for(let i = 1; i <= totalPages; i++) { %>
+                        <% urlParams.set('page', i); %>
+                        <li class="page-item <%= i === currentPage ? 'active' : '' %>"><a class="page-link" href="/feed?<%= urlParams.toString() %>"><%= i %></a></li>
+                    <% } %>
+                    <% if (currentPage < totalPages) { %>
+                        <% urlParams.set('page', currentPage + 1); %>
+                        <li class="page-item"><a class="page-link" href="/feed?<%= urlParams.toString() %>">Siguiente</a></li>
+                    <% } %>
+                </ul>
+            </nav>
         <% } %>
-    </div>
+    </main>
 
-    <% if (totalPages && totalPages > 1) { %>
-        <nav class="pagination-container">
-            <ul class="pagination">
-                <% 
-                   const queryParams = new URLSearchParams(query);
-                   queryParams.delete('page');
-                   const queryString = queryParams.toString();
-                %>
-                <% if (currentPage > 1) { %>
-                    <li class="page-item"><a class="page-link" href="/feed?page=<%= currentPage - 1 %><% if (queryString) { %>&<%= queryString %><% } %>">Anterior</a></li>
-                <% } %>
-                <% for(let i = 1; i <= totalPages; i++) { %>
-                    <li class="page-item <%= i === currentPage ? 'active' : '' %>"><a class="page-link" href="/feed?page=<%= i %><% if (queryString) { %>&<%= queryString %><% } %>"><%= i %></a></li>
-                <% } %>
-                <% if (currentPage < totalPages) { %>
-                    <li class="page-item"><a class="page-link" href="/feed?page=<%= currentPage + 1 %><% if (queryString) { %>&<%= queryString %><% } %>">Siguiente</a></li>
-                <% } %>
-            </ul>
-        </nav>
+    <% if (currentUser) { %>
+        <a href="/new-post" class="fab" title="Crear Anuncio"><i class="fas fa-plus"></i></a>
     <% } %>
-</main>
 
-<% if (currentUser) { %>
-    <a href="/new-post" class="fab" title="Crear Anuncio"><i class="fas fa-plus"></i></a>
-<% } %>
+    <%- include('partials/footer.html') %>
 
-<%- include('partials/footer.html') %>
-
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const toggleButton = document.getElementById('advanced-search-toggle');
-        const searchForm = document.getElementById('advanced-search-form');
-        
-        // --- Lógica para mostrar/ocultar Búsqueda Avanzada ---
-        if(toggleButton && searchForm) {
-            // Revisa si hay filtros avanzados activos para mostrar el formulario al cargar
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.has('username') || urlParams.has('gender') || urlParams.has('show_paid')) {
-                 searchForm.style.display = 'block';
-                 toggleButton.innerHTML = 'Búsqueda Avanzada ▲';
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggleButton = document.getElementById('advanced-search-toggle');
+            const searchForm = document.getElementById('advanced-search-form');
+            if(toggleButton && searchForm) {
+                const urlParams = new URLSearchParams(window.location.search);
+                urlParams.delete('page');
+                if(urlParams.toString().length > 0){
+                    searchForm.style.display = 'block';
+                    toggleButton.innerHTML = 'Búsqueda Avanzada ▲';
+                }
+                toggleButton.addEventListener('click', () => {
+                    const isHidden = searchForm.style.display === 'none';
+                    searchForm.style.display = isHidden ? 'block' : 'none';
+                    toggleButton.innerHTML = isHidden ? 'Búsqueda Avanzada ▲' : 'Búsqueda Avanzada ▼';
+                });
             }
+        });
+    </script>
 
-            toggleButton.addEventListener('click', () => {
-                const isHidden = searchForm.style.display === 'none';
-                searchForm.style.display = isHidden ? 'block' : 'none';
-                toggleButton.innerHTML = isHidden ? 'Búsqueda Avanzada ▲' : 'Búsqueda Avanzada ▼';
-            });
-        }
 
-        // --- Lógica para el formulario avanzado ---
-        const searchTypeSelect = document.getElementById('search_type');
-        const userSearchFilters = document.getElementById('user-search-filters');
-        const paidContentFilter = document.getElementById('paid-content-filter');
-        
-        function toggleAdvancedFilters() {
-            if (!searchTypeSelect) return;
-            // Si se busca "usuarios", se muestra el campo de nombre de usuario y se oculta el de "contenido de pago"
-            if (searchTypeSelect.value === 'users') {
-                if(userSearchFilters) userSearchFilters.style.display = 'block';
-                if(paidContentFilter) paidContentFilter.style.display = 'none';
-            } else { // Si se busca "posts"
-                if(userSearchFilters) userSearchFilters.style.display = 'none';
-                if(paidContentFilter) paidContentFilter.style.display = 'flex';
-            }
-        }
-        
-        if(searchTypeSelect) {
-            searchTypeSelect.addEventListener('change', toggleAdvancedFilters);
-            // Ejecutar al cargar la página para establecer el estado inicial correcto
-            toggleAdvancedFilters();
-        }
-    });
-</script>
+<div id="share-modal" class="share-modal-overlay">
+    <div class="share-modal-content">
+        <button id="share-modal-close" class="share-modal-close-btn">&times;</button>
+        <h3>Compartir Publicación</h3>
+        <p>Copia el enlace o compártelo directamente.</p>
+        <div class="share-link-container">
+            <input type="text" id="share-link-input" readonly>
+            <button id="copy-link-btn" class="btn btn-secondary">Copiar</button>
+        </div>
+        <div class="share-social-buttons">
+            <a id="whatsapp-share-btn" href="#" target="_blank" class="btn-social whatsapp">
+                <i class="fab fa-whatsapp"></i> Compartir por WhatsApp
+            </a>
+        </div>
+    </div>
+</div>
 
 </body>
 </html>

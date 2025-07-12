@@ -1,26 +1,7 @@
 <footer class="main-footer">
-    <div class="container text-center">
-        <p>&copy; <%= new Date().getFullYear() %> TentacionPY. Todos los derechos reservados.</p>
-        <p><a href="/terms">Términos y Condiciones</a> | <a href="/payout-info">Información de Pagos</a></p>
-    </div>
+    <p>&copy; 2024 - <%= new Date().getFullYear() %> TentacionPY. Todos los derechos reservados.</p>
+    <p>
+        <a href="/terms">Términos y Condiciones</a> | 
+        <a href="/payout-info">Información de Pagos</a>
+    </p>
 </footer>
-
-<div id="confirmationModal" class="modal">
-    <div class="modal-content">
-        <span class="close-button">&times;</span>
-        <h3 id="modalTitle">Confirmar Acción</h3>
-        <p id="modalMessage">¿Estás seguro?</p>
-        <div id="modal-additional-content"></div>
-        <p id="modalBalanceInfo" class="balance-info"></p>
-        <p class="refund-notice">Esta acción no es reembolsable.</p>
-        <div class="modal-actions">
-            <button id="modalCancelBtn" class="btn btn-secondary">Cancelar</button>
-            <button id="modalConfirmBtn" class="btn btn-danger">Confirmar</button>
-        </div>
-    </div>
-</div>
-
-<script src="https://kit.fontawesome.com/1a788d3463.js" crossorigin="anonymous"></script>
-<script src="/js/main.js"></script>
-</body>
-</html>

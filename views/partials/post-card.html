@@ -1,44 +1,58 @@
-<%# views/partials/post-card.html %>
+<%# Esta condición comprueba si el autor del post existe. Si no, no muestra nada. %>
+<% if (post && post.userId) { %>
 
-<% 
-   // Preparamos las variables de forma segura y limpia dentro del parcial
-   const isBoosted = locals.post && post.boostedUntil && new Date(post.boostedUntil) > new Date();
-   const boostColor = (isBoosted && post.boostOptions && post.boostOptions.color) ? post.boostOptions.color : '#E91E63';
-   const boostLabel = (isBoosted && post.boostOptions && post.boostOptions.label) ? post.boostOptions.label : '';
-%>
+    <%
+    let cardClasses = 'post-card';
+    let cardStyle = '';
+    if (post.boostedUntil && new Date(post.boostedUntil) > new Date() && post.boostOptions) {
+        cardClasses += ' boosted'; // Añade una clase para el borde
+        const boostColor = post.boostOptions.color || 'var(--primary-color)';
+        // Define la variable de CSS que se usará en la hoja de estilos interna
+        cardStyle = `style="--boost-color: ${boostColor}"`;
+    }
+    %>
 
-<div class="post-card <%= isBoosted ? 'boosted' : '' %>" <% if (isBoosted) { %>style="--boost-color: <%= boostColor %>"<% } %>>
-    
-    <% if(isBoosted && boostLabel) { %>
-        <div class="boost-label"><%= boostLabel %></div>
-    <% } %>
+    <div class="<%= cardClasses %>" <%- cardStyle %>>
 
-    <a href="/anuncio/<%= post._id %>" class="post-card-link">
-        <% if (post.files && post.files.length > 0) { %>
-           <img src="<%= post.files[0] %>" alt="Post de <%= (post.userId && post.userId.username) || 'Usuario' %>" class="post-card-image" onerror="this.onerror=null;this.src='/img/placeholder.png';">
-        <% } else { %>
-           <img src="/img/placeholder.png" alt="Imagen no disponible" class="post-card-image">
-        <% } %>
-        
-        <% if (post.isSubscriberOnly || (post.type === 'video' && post.price > 0)) { %>
-           <div class="content-lock-icon"><i class="fas fa-lock"></i></div>
+        <% if(post.boostedUntil && new Date(post.boostedUntil) > new Date() && post.boostOptions) { %>
+            <div class="boost-label">
+                <i class="fas fa-rocket"></i> <%= post.boostOptions.label || 'Promocionado' %>
+            </div>
         <% } %>
 
-        <% if (post.type === 'video') { %>
-            <div class="video-overlay"><i class="fas fa-play"></i></div>
-        <% } %>
-    </a>
-    
-    <div class="post-card-info">
-        <% if (post.userId) { %>
+        <a href="/anuncio/<%= post._id %>" class="post-card-link">
+            <% if (post.files && post.files.length > 0) { %>
+                <img src="<%= post.files[0] %>" alt="Anuncio de <%= post.userId.username %>" class="post-card-image">
+            <% } %>
+
+            <% if(post.type === 'video') { %>
+                <div class="video-overlay">
+                    <i class="fas fa-play"></i>
+                </div>
+                <% if (post.price > 0) { %>
+                    <div class="content-lock-icon" title="Video de pago"><i class="fas fa-dollar-sign"></i></div>
+                <% } else if (post.isSubscriberOnly) { %>
+                    <div class="content-lock-icon" title="Solo para suscriptores"><i class="fas fa-star"></i></div>
+                <% } %>
+            <% } else if (post.isSubscriberOnly) { %>
+                 <div class="content-lock-icon" title="Solo para suscriptores"><i class="fas fa-star"></i></div>
+            <% } %>
+        </a>
+
+        <div class="post-card-info">
             <a href="/user/<%= post.userId.username %>" class="post-card-user">
-                <img src="<%= post.userId.profilePic %>" alt="<%= post.userId.username %>" class="avatar">
+                <img src="<%= post.userId.profilePic %>" alt="Avatar de <%= post.userId.username %>" class="avatar">
                 <span><%= post.userId.username %></span>
             </a>
-        <% } %>
-        <div class="post-card-stats">
-            <span><i class="fas fa-heart"></i> <%= post.likes ? post.likes.length : 0 %></span>
-            <span><i class="fas fa-eye"></i> <%= post.views || 0 %></span>
-        </div>
+            <div class="post-card-actions">
+                 <button class="icon-btn share-btn" data-post-url="/anuncio/<%= post._id %>" title="Compartir">
+                    <i class="fas fa-share-square"></i>
+                </button>
+                <a href="/report?type=post&id=<%= post._id %>" class="icon-btn" title="Reportar">
+                    <i class="fas fa-flag"></i>
+                </a>
+            </div>
+             </div>
     </div>
-</div>
+
+<% } %>

@@ -7,10 +7,28 @@
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/viewerjs/1.10.1/viewer.min.css">
+    <style>
+        /* Estilos para el modal de promoción */
+        .modal-background {
+            display: none; position: fixed; z-index: 2000; left: 0; top: 0;
+            width: 100%; height: 100%; background-color: rgba(0,0,0,0.7);
+            justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background-color: var(--surface-light-color); padding: 2rem;
+            border-radius: 8px; width: 90%; max-width: 500px;
+            border-top: 4px solid var(--primary-color);
+        }
+        .modal-content h3 { margin-top: 0; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; }
+        .form-group-radio {
+            padding: 1rem; border: 1px solid var(--border-color);
+            border-radius: 5px; margin-bottom: 0.5rem; cursor: pointer;
+        }
+    </style>
 </head>
 <body>
 
-<%# La ruta es correcta porque este archivo está en la raíz de /views %>
 <%- include('partials/header.html') %>
 
 <main class="container">
@@ -115,6 +133,7 @@
                             <button class="btn btn-primary btn-block" id="boost-post-btn">🚀 Promocionar Anuncio</button>
                         <% } %>
                         <hr>
+                        <a href="/post/<%= post._id %>/edit" class="btn btn-secondary btn-block">✏️ Editar Anuncio</a>
                         <button class="btn btn-danger btn-block btn-delete-post" data-post-id="<%= post._id %>">🗑️ Eliminar Anuncio</button>
                     </div>
                 <% } %>
@@ -137,31 +156,43 @@
                         <p><a href="/login">Inicia sesión</a> para dejar un comentario.</p>
                     <% } %>
                     <div id="comments-list">
-    <% if (locals.post && post.comments && post.comments.length > 0) { %>
-        <% post.comments.slice().reverse().forEach((comment, index) => { %>
-            <% if (comment.userId) { %>
-                <%# Añadimos la clase 'hidden' a los comentarios a partir del tercero %>
-                <div class="comment <%= index >= 3 ? 'hidden' : '' %>">
-                    <img src="<%= comment.userId.profilePic %>" alt="avatar" class="avatar">
-                    <div class="comment-body">
-                        <strong><%= comment.userId.username %></strong>
-                        <p><%= comment.text %></p>
-                        <% if(comment.donation && comment.donation.amount > 0) { %>
-                            <span class="donation-badge">Donó <%= comment.donation.amount %> 💎</span>
+                        <% if (locals.post && post.comments && post.comments.length > 0) { %>
+                            <% post.comments.slice().reverse().forEach((comment, index) => { %>
+                                <% if (comment.userId) { %>
+                                    <div class="comment <%= index >= 3 ? 'hidden' : '' %>">
+                                        <img src="<%= comment.userId.profilePic %>" alt="avatar" class="avatar">
+                                        <div class="comment-body">
+                                            <strong><%= comment.userId.username %></strong>
+                                            <p><%= comment.text %></p>
+                                            <% if(comment.donation && comment.donation.amount > 0) { %>
+                                                <span class="donation-badge">Donó <%= comment.donation.amount %> 💎</span>
+                                            <% } %>
+                                        </div>
+                                    </div>
+                                <% } %>
+                            <% }); %>
+                            <% if (post.comments.length > 3) { %>
+                                <button class="btn btn-secondary btn-block" id="show-more-comments">
+                                    Mostrar todos los comentarios (<%= post.comments.length %>)
+                                </button>
+                            <% } %>
                         <% } %>
                     </div>
                 </div>
-            <% } %>
-        <% }); %>
+            </div>
+        </div>
 
-        <%# Añadimos el botón de "Ver más" si hay más de 3 comentarios %>
-        <% if (post.comments.length > 3) { %>
-            <button class="btn btn-secondary btn-block" id="show-more-comments">
-                Mostrar todos los comentarios (<%= post.comments.length %>)
-            </button>
+        <% if (locals.recommendedPosts && recommendedPosts.length > 0) { %>
+            <div class="recommended-section">
+                <hr>
+                <h2>Recomendados para ti</h2>
+                <div class="post-grid">
+                    <% recommendedPosts.forEach(recPost => { %>
+                        <%- include('partials/post-card.html', { post: recPost }) %>
+                    <% }); %>
+                </div>
+            </div>
         <% } %>
-    <% } %>
-</div>
     <% } else { %>
         <div class="error-container">
             <h2>Anuncio no encontrado</h2>
@@ -171,108 +202,201 @@
     <% } %>
 </main>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/viewerjs/1.10.1/viewer.min.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const galleryElement = document.getElementById('image-gallery');
-        if (galleryElement) {
-            try { new Viewer(galleryElement); } catch (e) { console.error('ViewerJS error:', e); }
-        }
-
-        const commentForm = document.getElementById('comment-form');
-        if(commentForm) {
-            commentForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const form = e.target;
-                const postId = form.dataset.postId;
-                const text = form.elements.text.value;
-                const donationAmount = form.elements.donationAmount.value;
-                const submitButton = form.querySelector('button[type="submit"]');
-
-                submitButton.disabled = true;
-                submitButton.textContent = 'Enviando...';
-
-                try {
-                    const response = await fetch(`/post/${postId}/comments`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ text, donationAmount })
-                    });
-                    const data = await response.json();
-                    if (!response.ok) throw new Error(data.message || 'Error en el servidor');
-                    
-                    const list = document.getElementById('comments-list');
-                    const newComment = document.createElement('div');
-                    newComment.className = 'comment';
-                    let donationHTML = '';
-                    if(data.comment.donation && data.comment.donation.amount > 0) {
-                        donationHTML = `<span class="donation-badge">Donó ${data.comment.donation.amount} 💎</span>`;
-                    }
-                    newComment.innerHTML = `
-                        <img src="${data.comment.userId.profilePic}" alt="avatar" class="avatar">
-                        <div class="comment-body">
-                            <strong>${data.comment.userId.username}</strong>
-                            <p>${data.comment.text}</p>
-                            ${donationHTML}
-                        </div>`;
-                    list.prepend(newComment);
-                    form.reset();
-                    
-                    const countSpan = document.getElementById('comment-count');
-                    countSpan.textContent = parseInt(countSpan.textContent) + 1;
-                } catch (error) {
-                    alert('Error al publicar comentario: ' + error.message);
-                } finally {
-                    submitButton.disabled = false;
-                    submitButton.textContent = 'Comentar';
-                }
-            });
-        }
-    });
-</script>
-
-
-<% if (locals.recommendedPosts && recommendedPosts.length > 0) { %>
-        <div class="recommended-section">
-            <hr>
-            <h2>Recomendados para ti</h2>
-            <div class="post-grid">
-                <% recommendedPosts.forEach(recPost => { %>
-                    <div class="post-card">
-                        <a href="/anuncio/<%= recPost._id %>" class="post-card-link">
-                            <% if (recPost.files && recPost.files.length > 0) { %>
-                               <img src="<%= recPost.files[0] %>" alt="Post de <%= recPost.userId.username %>" class="post-card-image">
-                            <% } else { %>
-                               <img src="/img/placeholder.png" alt="Imagen no disponible" class="post-card-image">
-                            <% } %>
-                            
-                            <% if (recPost.isSubscriberOnly || (recPost.type === 'video' && recPost.price > 0)) { %>
-                               <div class="content-lock-icon"><i class="fas fa-lock"></i></div>
-                            <% } %>
-    
-                            <% if (recPost.type === 'video') { %>
-                                <div class="video-overlay"><i class="fas fa-play"></i></div>
-                            <% } %>
-                        </a>
-                        <div class="post-card-info">
-                            <% if (recPost.userId) { %>
-                                <a href="/user/<%= recPost.userId.username %>" class="post-card-user">
-                                    <img src="<%= recPost.userId.profilePic %>" alt="<%= recPost.userId.username %>" class="avatar">
-                                    <span><%= recPost.userId.username %></span>
-                                </a>
-                            <% } %>
-                        </div>
-                    </div>
-                <% }); %>
+<div id="boost-modal" class="modal-background">
+    <div class="modal-content">
+        <h3>🚀 Promocionar Anuncio</h3>
+        <p>Elige un plan para destacar tu anuncio en el feed y llegar a más gente.</p>
+        <form id="boost-form">
+            <div class="form-group-radio">
+                <label>
+                    <input type="radio" name="boost" value="viral_80" checked>
+                    <strong>Plan Viral (24h)</strong> - 80 💎
+                </label>
             </div>
-        </div>
-    <% } %>
-
-</main>
+            <div class="form-group-radio">
+                <label>
+                    <input type="radio" name="boost" value="tendencia_200">
+                    <strong>Plan Tendencia (3 Días)</strong> - 200 💎
+                </label>
+            </div>
+            <div class="form-group-radio">
+                <label>
+                    <input type="radio" name="boost" value="hot_600">
+                    <strong>Plan Hot (10 Días)</strong> - 600 💎
+                </label>
+            </div>
+             <div class="form-group">
+                <label for="boost-label">Elige una etiqueta:</label>
+                <input type="text" name="boostLabel" value="🔥 Hot" class="form-control">
+            </div>
+            <div class="modal-actions">
+                <button type="button" id="cancel-boost" class="btn btn-secondary">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Promocionar</button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <%- include('partials/footer.html') %>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/viewerjs/1.10.1/viewer.min.js"></script>
 
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    // --- FUNCIÓN HELPER GENERAL PARA LLAMADAS A LA API ---
+    async function makeApiCall(url, method, body, successMessage) {
+        try {
+            const options = {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            };
+            const response = await fetch(url, options);
+            const data = await response.json();
+
+            if (!response.ok) throw new Error(data.message || 'Ocurrió un error en el servidor');
+            
+            if (successMessage) alert(successMessage);
+            
+            // Si la llamada fue exitosa y resultó en un redirect, lo ejecutamos
+            if (data.redirectUrl) {
+                window.location.href = data.redirectUrl;
+            } else {
+                 window.location.reload(); // Recargar para ver los cambios
+            }
+        } catch (err) {
+            alert(`Error: ${err.message}`);
+        }
+    }
+
+    // --- INICIALIZAR GALERÍA DE IMÁGENES ---
+    const galleryElement = document.getElementById('image-gallery');
+    if (galleryElement) {
+        try {
+            new Viewer(galleryElement);
+        } catch (e) {
+            console.error('Error al inicializar Viewer.js:', e);
+        }
+    }
+    
+    // --- LÓGICA DE MOSTRAR MÁS COMENTARIOS ---
+    const showMoreBtn = document.getElementById('show-more-comments');
+    if (showMoreBtn) {
+        showMoreBtn.addEventListener('click', () => {
+            document.querySelectorAll('.comment.hidden').forEach(comment => {
+                comment.classList.remove('hidden');
+            });
+            showMoreBtn.style.display = 'none';
+        });
+    }
+
+    // --- MANEJO DE TODOS LOS BOTONES Y FORMULARIOS DE LA PÁGINA ---
+    document.body.addEventListener('click', async (e) => {
+        // Botón de "Me Gusta"
+        if (e.target.closest('.btn-like')) {
+            e.preventDefault();
+            const btn = e.target.closest('.btn-like');
+            const postId = btn.dataset.postId;
+            try {
+                const response = await fetch(`/post/${postId}/like`, { method: 'POST' });
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('like-count').textContent = data.likes;
+                    btn.classList.toggle('liked', data.liked);
+                }
+            } catch (err) { console.error('Error al dar like:', err); }
+        }
+
+        // Botón de "Comprar Video"
+        if (e.target.closest('.btn-buy-video')) {
+            e.preventDefault();
+            const btn = e.target.closest('.btn-buy-video');
+            if (confirm(`¿Confirmas la compra de este video por ${btn.dataset.price} 💎?`)) {
+                makeApiCall(`/buy-video/${btn.dataset.postId}`, 'POST', {}, '¡Compra exitosa!');
+            }
+        }
+
+        // Botón de "Suscribirse"
+        if (e.target.closest('.btn-subscribe')) {
+            e.preventDefault();
+            const btn = e.target.closest('.btn-subscribe');
+            if (confirm(`¿Confirmas la suscripción a ${btn.dataset.creatorName} por ${btn.dataset.price} 💎 al mes?`)) {
+                makeApiCall(`/user/${btn.dataset.creatorId}/subscribe`, 'POST', {}, '¡Suscripción exitosa!');
+            }
+        }
+
+        // Botón de "Eliminar Anuncio"
+        if (e.target.closest('.btn-delete-post')) {
+            e.preventDefault();
+            const btn = e.target.closest('.btn-delete-post');
+            if (confirm('¿Estás SEGURO de que quieres eliminar este anuncio para siempre? Esta acción no se puede deshacer.')) {
+                 makeApiCall(`/post/${btn.dataset.postId}/delete`, 'POST', {}, 'Anuncio eliminado.');
+            }
+        }
+        
+        // --- LÓGICA DEL MODAL DE PROMOCIÓN ---
+        const boostModal = document.getElementById('boost-modal');
+        // Abrir modal
+        if (e.target.closest('#boost-post-btn')) {
+            boostModal.style.display = 'flex';
+        }
+        // Cerrar modal
+        if (e.target.closest('#cancel-boost') || e.target === boostModal) {
+            boostModal.style.display = 'none';
+        }
+    });
+    
+    // --- LÓGICA DE FORMULARIOS (COMENTARIOS Y PROMOCIÓN) ---
+    document.body.addEventListener('submit', async(e) => {
+        // Formulario de Comentarios
+        if(e.target.id === 'comment-form') {
+            e.preventDefault();
+            const form = e.target;
+            const postId = form.dataset.postId;
+            const text = form.elements.text.value;
+            const donationAmount = form.elements.donationAmount.value;
+            const submitButton = form.querySelector('button[type="submit"]');
+
+            submitButton.disabled = true;
+            submitButton.textContent = 'Enviando...';
+
+            try {
+                const response = await fetch(`/post/${postId}/comments`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text, donationAmount })
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message || 'Error en el servidor');
+                
+                // Recargar la página para ver el nuevo comentario. Es más simple y efectivo.
+                window.location.reload();
+
+            } catch (error) {
+                alert('Error al publicar comentario: ' + error.message);
+                submitButton.disabled = false;
+                submitButton.textContent = 'Comentar';
+            }
+        }
+        
+        // Formulario de Promoción
+        if(e.target.id === 'boost-form') {
+            e.preventDefault();
+            const form = e.target;
+            const formData = new FormData(form);
+            const body = Object.fromEntries(formData.entries());
+            const postId = window.location.pathname.split('/anuncio/').pop();
+
+            const [plan, cost] = body.boost.split('_');
+            if(confirm(`Confirmas la promoción con el plan "${plan.toUpperCase()}" por un costo de ${cost} 💎?`)) {
+                document.getElementById('boost-modal').style.display = 'none';
+                makeApiCall(`/post/${postId}/boost`, 'POST', body, '¡Anuncio promocionado con éxito!');
+            }
+        }
+    });
+});
+</script>
 
 </body>
 </html>
