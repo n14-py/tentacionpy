@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 message: `Suscribirte a <strong>${creatorName}</strong> por <strong>${price} 💎</strong>/mes?`,
                 balanceInfo: `Saldo después: <strong>${finalBalance.toLocaleString('es-PY')} 💎</strong>.`,
                 confirmText: 'Suscribir',
-                // ## CORRECCIÓN ## La ruta correcta es /user/:id/subscribe
+                
                 onConfirm: () => makeApiCall(`/user/${creatorId}/subscribe`, 'POST', {}, '¡Suscripción exitosa!', true)
             });
         }

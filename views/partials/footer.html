@@ -5,3 +5,17 @@
         <a href="/payout-info">Información de Pagos</a>
     </p>
 </footer>
+
+<div id="confirmationModal" class="modal-background" style="display: none;">
+    <div class="modal-content">
+        <button class="close-button" id="modalCloseBtn">&times;</button>
+        <h3 id="modalTitle">Confirmar Acción</h3>
+        <p id="modalMessage">¿Estás seguro?</p>
+        <div id="modal-additional-content"></div>
+        <p id="modalBalanceInfo" style="margin-top: 1rem; color: var(--text-muted-color);"></p>
+        <div class="modal-actions">
+            <button id="modalCancelBtn" class="btn btn-secondary">Cancelar</button>
+            <button id="modalConfirmBtn" class="btn btn-primary">Confirmar</button>
+        </div>
+    </div>
+</div>

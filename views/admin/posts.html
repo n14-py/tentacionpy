@@ -86,6 +86,22 @@
                                             <td><%= post.type %></td>
                                             <td><%= formatDate(post.createdAt) %></td>
                                             <td>
+                                                // To: tpy.com/views/admin/posts.html
+                                            <td>
+                                                // From: tpy.com/views/admin/posts.html (ESTE ES EL CÓDIGO INCORRECTO)
+                                            <td>
+                                                // To: tpy.com/views/admin/posts.html
+                                            <td>
+                                                <% if(post.status === 'pending') { %>
+                                                    <form action="/admin/post/<%= post._id %>/update-status" method="POST" class="d-inline">
+                                                        <input type="hidden" name="status" value="approved">
+                                                        <button type="submit" class="btn btn-sm btn-success" title="Aprobar"><i class="fas fa-check"></i></button>
+                                                    </form>
+                                                    <form action="/admin/post/<%= post._id %>/update-status" method="POST" class="d-inline">
+                                                        <input type="hidden" name="status" value="rejected">
+                                                        <button type="submit" class="btn btn-sm btn-danger" title="Rechazar"><i class="fas fa-times"></i></button>
+                                                    </form>
+                                                <% } %>
                                                 <a href="/anuncio/<%= post._id %>" target="_blank" class="btn btn-sm btn-info" title="Ver anuncio">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
@@ -94,6 +110,7 @@
                                                         <i class="fas fa-trash"></i>
                                                     </button>
                                                 </form>
+                                            
                                             </td>
                                         </tr>
                                     <% }); %>

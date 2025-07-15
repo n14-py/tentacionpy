@@ -20,6 +20,8 @@ const LocalStrategy = require('passport-local').Strategy;
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const fetch = require('node-fetch');
 
+
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -85,15 +87,15 @@ const PAGOPAR_PRIVATE_TOKEN = "280e500fb8bc93cd782d7fa4435de2f8";
 const donationSchema = new mongoose.Schema({ userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, amount: Number }, { timestamps: true });
 const commentSchema = new mongoose.Schema({ userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, text: String, donation: donationSchema }, { timestamps: true });
 const subscriptionSchema = new mongoose.Schema({ subscriberId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, endDate: Date }, { timestamps: true });
+const userSubscriptionSchema = new mongoose.Schema({ creatorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, endDate: Date });
 
-// ===== MODELO DE USUARIO ACTUALIZADO =====
-// ===== MODELO DE USUARIO ACTUALIZADO =====
+
 const userSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true, lowercase: true, trim: true },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     password: { type: String }, googleId: { type: String },
     gender: { type: String, enum: ['Mujer', 'Hombre', 'Trans'] }, orientation: { type: String, enum: ['Heterosexual', 'Homosexual', 'Bisexual'] },
-    location: { type: String, enum: CITIES }, bio: String, whatsapp: String, profilePic: { type: String, default: '/img/default.png' },
+    location: { type: String, enum: CITIES }, bio: String, whatsapp: String, profilePic: { type: String, default: 'https://res.cloudinary.com/dmedd6w1q/image/upload/v1752519015/Gemini_Generated_Image_jafmcpjafmcpjafm_i5ptpl.png' },
     tpysBalance: { type: Number, default: 100 },
     isVerified: { type: Boolean, default: false },
     isBanned: { type: Boolean, default: false },
@@ -102,7 +104,7 @@ const userSchema = new mongoose.Schema({
     following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     likedPosts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post' }],
     isAdmin: { type: Boolean, default: false },
-    subscriptions: [{ creatorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, endDate: Date }],
+    subscriptions: [userSubscriptionSchema],
     subscribers: [subscriptionSchema],
     subscriptionSettings: { isActive: { type: Boolean, default: false }, price: { type: Number, enum: [300, 600, 1000, 1250], default: 300 } },
     achievements: { tenSubscribers: { claimed: Boolean }, thousandFollowers: { claimed: Boolean }, tenVideoSales: { claimed: Boolean } },
@@ -111,14 +113,29 @@ const userSchema = new mongoose.Schema({
     blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }] // <-- AÑADIR ESTA LÍNEA
 }, { timestamps: true });
 
+// To: tpy.com/server.js
 const postSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, type: { type: String, enum: ['image', 'video'] }, files: [String],
     description: String, whatsapp: String, category: { type: String, enum: CATEGORIES }, tags: [String], address: String, services: [String], rate: String,
     price: { type: Number, default: 0 }, salesCount: { type: Number, default: 0 }, isSubscriberOnly: { type: Boolean, default: false },
     views: { type: Number, default: 0 }, likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], comments: [commentSchema],
     boostedUntil: Date,
-    boostOptions: { color: String, label: String }
+    boostOptions: { color: String, label: String },
+    status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' } // <-- LÍNEA AÑADIDA
 }, { timestamps: true });
+
+// To: tpy.com/server.js
+
+// ===== NUEVO MODELO PARA SOLICITUDES DE VERIFICACIÓN =====
+const verificationSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
+    idPhoto: { type: String, required: true },
+    selfiePhoto: { type: String, required: true },
+    status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
+    rejectionReason: { type: String }
+}, { timestamps: true });
+
+const Verification = mongoose.model('Verification', verificationSchema);
 
 const reportSchema = new mongoose.Schema({
     reportingUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
@@ -319,6 +336,17 @@ const isPostOwner = async (req, res, next) => {
     }
 };
 
+// To: tpy.com/server.js
+
+// ===== NUEVO MIDDLEWARE PARA REQUERIR VERIFICACIÓN =====
+const requireVerification = async (req, res, next) => {
+    if (req.user.isVerified || req.user.isAdmin) {
+        return next(); // Si ya está verificado o es admin, puede pasar.
+    }
+    // Si no está verificado, lo mandamos a la página de verificación.
+    res.redirect('/verify-account');
+};
+
 // =============================================
 //               FIN DE LA PARTE 1
 // =============================================
@@ -365,7 +393,9 @@ app.get('/feed', async (req, res, next) => {
             
             const activeUsers = await User.find(activeUserCondition).select('_id');
             const activeUserIds = activeUsers.map(u => u._id);
-            filter = { userId: { $in: activeUserIds }, type: 'image', price: 0, isSubscriberOnly: false };
+            filter = { userId: { $in: activeUserIds }, type: 'image', price: 0, isSubscriberOnly: false, status: 'approved' };
+
+            if (category) filter.category = category;
 
             if (category) filter.category = category;
             if (q) {
@@ -486,8 +516,10 @@ app.post('/user/:id/follow', requireAuth, async (req, res, next) => {
 // =============================================
 // RUTAS DE POSTS Y CONTENIDO
 // =============================================
-app.get('/new-post', requireAuth, (req, res) => res.render('new-post'));
-app.post('/new-post', requireAuth, upload.array('files', 10), async (req, res, next) => {
+// To: tpy.com/server.js
+app.get('/new-post', requireAuth, requireVerification, (req, res) => res.render('new-post'));
+
+app.post('/new-post', requireAuth, requireVerification, upload.array('files', 10), async (req, res, next) => {
     try {
         const { type, description, price, services, rate, address, whatsapp, category, tags, isSubscriberOnly } = req.body;
         if (!req.files || req.files.length === 0) throw new Error("Debes subir al menos un archivo.");
@@ -798,6 +830,82 @@ app.post('/admin/report/:id/update', requireAdmin, async (req, res, next) => {
     }
 });
 
+
+// To: tpy.com/server.js (ESTE ES EL BLOQUE CORRECTO)
+// --- RUTAS MEJORADAS PARA MODERACIÓN DE CONTENIDO ---
+app.get('/admin/moderation', requireAdmin, async (req, res, next) => {
+    try {
+        const firstPendingPost = await Post.findOne({ status: 'pending' }).sort({ createdAt: 'asc' });
+
+        if (firstPendingPost) {
+            res.redirect(`/admin/moderation/view/${firstPendingPost._id}`);
+        } else {
+            res.render('admin/moderation-view', { 
+                post: null, 
+                pendingCount: 0,
+                layout: false
+            });
+        }
+    } catch (err) {
+        next(err);
+    }
+});
+
+app.get('/admin/moderation/view/:id', requireAdmin, async (req, res, next) => {
+    try {
+        const postToModerate = await Post.findById(req.params.id).populate('userId', 'username');
+        if (!postToModerate || postToModerate.status !== 'pending') {
+            return res.redirect('/admin/moderation');
+        }
+        
+        const pendingCount = await Post.countDocuments({ status: 'pending' });
+
+        res.render('admin/moderation-view', {
+            post: postToModerate,
+            pendingCount: pendingCount,
+            layout: false
+        });
+
+    } catch (err) {
+        next(err);
+    }
+});
+
+app.post('/admin/post/:id/update-status', requireAdmin, async (req, res, next) => {
+    try {
+        const { status } = req.body;
+        const currentPostId = req.params.id;
+        const validStatuses = ['approved', 'rejected'];
+        if (!validStatuses.includes(status)) throw new Error('Estado no válido');
+
+        const post = await Post.findById(currentPostId);
+        if(!post) return res.redirect('/admin/moderation');
+
+        if (status === 'approved') {
+            post.status = status;
+            await post.save();
+            await new Notification({ userId: post.userId, type: 'admin', message: `Tu publicación "${post.description.slice(0, 20)}..." fue aprobada.` }).save();
+        } else if (status === 'rejected') {
+             for (const fileUrl of post.files) {
+                const publicId = getPublicId(fileUrl);
+                if (publicId) await cloudinary.uploader.destroy(publicId, { resource_type: fileUrl.includes('/video/') ? 'video' : 'image' }).catch(err => console.log("Cloudinary destroy failed:", err));
+            }
+            await Post.findByIdAndDelete(currentPostId);
+            await new Notification({ userId: post.userId, type: 'admin', message: `Tu publicación fue rechazada por no cumplir las normas.` }).save();
+        }
+        
+        const nextPost = await Post.findOne({ status: 'pending' }).sort({ createdAt: 'asc' });
+        
+        if (nextPost) {
+            res.redirect(`/admin/moderation/view/${nextPost._id}`);
+        } else {
+            res.redirect('/admin/moderation');
+        }
+
+    } catch (err) {
+        next(err);
+    }
+});
 // =============================================
 // RUTAS DE MONETIZACIÓN (COMPLETAS)
 // =============================================
@@ -914,6 +1022,11 @@ app.post('/user/:id/subscribe', requireAuth, async (req, res, next) => {
 
             await new Transaction({ type: 'subscription', sellerId: creator._id, buyerId: buyer._id, amount: price, netEarning }).save({ session });
             await new Notification({ userId: creator._id, actorId: buyer._id, type: 'subscribe', message: `se ha suscrito a tu perfil.` }).save({ session });
+
+            buyer.markModified('subscriptions');
+            creator.markModified('subscribers');
+
+
 
             await buyer.save({ session });
             await creator.save({ session });
@@ -1256,6 +1369,91 @@ app.post('/admin/withdrawal/:id/update', requireAdmin, async (req, res, next) =>
         withdrawal.status = status;
         await withdrawal.save();
         res.redirect('/admin/withdrawals');
+    } catch (err) { next(err); }
+});
+
+
+// To: tpy.com/server.js
+
+// --- RUTAS DE VERIFICACIÓN DE IDENTIDAD ---
+app.get('/verify-account', requireAuth, async (req, res, next) => {
+    try {
+        if (req.user.isVerified) {
+            return res.redirect('/new-post'); // Si ya está verificado, que no vea esta página
+        }
+        const existingVerification = await Verification.findOne({ userId: req.user._id });
+        res.render('verify-account', { 
+            status: existingVerification ? existingVerification.status : 'unsubmitted',
+            reason: existingVerification ? existingVerification.rejectionReason : null
+        });
+    } catch (err) { next(err); }
+});
+
+app.post('/verify-account', requireAuth, upload.array('verificationPhotos', 2), async (req, res, next) => {
+    try {
+        if (req.user.isVerified) return res.redirect('/feed');
+        if (!req.files || req.files.length !== 2) throw new Error("Debes subir exactamente dos imágenes.");
+
+        // Eliminar solicitud rechazada anterior si existe
+        await Verification.findOneAndDelete({ userId: req.user._id });
+
+        const newVerification = new Verification({
+            userId: req.user._id,
+            idPhoto: req.files[0].path,
+            selfiePhoto: req.files[1].path,
+            status: 'pending'
+        });
+        await newVerification.save();
+        res.redirect('/verify-account');
+    } catch (err) { next(err); }
+});
+
+
+// To: tpy.com/server.js
+
+// --- RUTAS DE ADMIN PARA VERIFICACIONES ---
+app.get('/admin/verifications', requireAdmin, async (req, res, next) => {
+    try {
+        const pendingVerifications = await Verification.find({ status: 'pending' }).populate('userId', 'username');
+        res.render('admin/verifications', { verifications: pendingVerifications, layout: false });
+    } catch (err) { next(err); }
+});
+
+app.post('/admin/verification/:id/approve', requireAdmin, async (req, res, next) => {
+    try {
+        const verification = await Verification.findById(req.params.id);
+        if (!verification) throw new Error('Solicitud no encontrada.');
+
+        await User.findByIdAndUpdate(verification.userId, { isVerified: true });
+        
+        // Eliminamos los documentos de Cloudinary para proteger la privacidad
+        await cloudinary.uploader.destroy(getPublicId(verification.idPhoto));
+        await cloudinary.uploader.destroy(getPublicId(verification.selfiePhoto));
+
+        // Finalmente, eliminamos el registro de verificación de la BD
+        await Verification.findByIdAndDelete(req.params.id);
+
+        await new Notification({ userId: verification.userId, type: 'admin', message: '¡Felicidades! Tu cuenta ha sido verificada.' }).save();
+        res.redirect('/admin/verifications');
+    } catch (err) { next(err); }
+});
+
+app.post('/admin/verification/:id/reject', requireAdmin, async (req, res, next) => {
+    try {
+        const { reason } = req.body;
+        const verification = await Verification.findByIdAndUpdate(req.params.id, { 
+            status: 'rejected', 
+            rejectionReason: reason || 'Los documentos no cumplían con los requisitos.' 
+        });
+        
+        if (verification) {
+            await User.findByIdAndUpdate(verification.userId, { isVerified: false });
+            await cloudinary.uploader.destroy(getPublicId(verification.idPhoto));
+            await cloudinary.uploader.destroy(getPublicId(verification.selfiePhoto));
+            await new Notification({ userId: verification.userId, type: 'admin', message: `Tu solicitud de verificación fue rechazada. Motivo: ${reason}` }).save();
+        }
+
+        res.redirect('/admin/verifications');
     } catch (err) { next(err); }
 });
 
