@@ -1,0 +1,184 @@
+<%- include('partials/header.html') %>
+
+<div class="page-header">
+    <h1>Panel de Creador</h1>
+    <p>Gestiona tus ingresos, estadísticas y logros en un solo lugar.</p>
+</div>
+
+<div class="dashboard-container">
+    <h2>Resumen General</h2>
+    <div class="post-grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));">
+        <div class="stat-card">
+            <h3>Saldo Actual</h3>
+            <p><%= currentUser.tpysBalance.toFixed(0) %> TPYS</p>
+            <span>≈ <%= (currentUser.tpysBalance * TPYS_TO_GS_RATE).toLocaleString('es-PY', {style: 'currency', currency: 'PYG'}) %></span>
+        </div>
+        <div class="stat-card">
+            <h3>Ganancias Totales</h3>
+            <p><%= totalNetEarnings.toFixed(0) %> TPYS</p>
+            <span>Histórico</span>
+        </div>
+        <div class="stat-card">
+            <h3>Suscriptores Activos</h3>
+            <p><%= activeSubscribersCount %></p>
+            <a href="/settings/subscriptions" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.8rem; margin-top: 0.5rem;">Gestionar</a>
+        </div>
+        <div class="stat-card">
+            <h3>Videos Vendidos</h3>
+            <p><%= myVideos.reduce((sum, v) => sum + v.salesCount, 0) %></p>
+            <span>Total de ventas</span>
+        </div>
+    </div>
+    <div style="text-align: center; margin-top: 2rem;">
+        <a href="/withdrawal" class="btn btn-primary" style="background-color: var(--success-color);">Retirar Fondos</a>
+        <a href="/payout-info" class="btn btn-secondary">Información sobre Pagos</a>
+    </div>
+</div>
+
+
+<div class="dashboard-container" style="margin-top: 2rem;">
+    <h2>Rendimiento de tus Videos</h2>
+     <div style="overflow-x: auto;">
+        <table class="dashboard-table">
+            <thead>
+                <tr>
+                    <th>Video</th>
+                    <th>Precio</th>
+                    <th>Ventas</th>
+                    <th>Vistas</th>
+                    <th>Ganancia Estimada</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (myVideos.length > 0) { %>
+                    <% myVideos.forEach(video => { %>
+                        <tr>
+                            <td>
+                                <a href="/post/<%= video._id %>" style="display: flex; align-items: center; gap: 1rem;">
+                                    <video src="<%= video.files[0] %>#t=2" muted preload="metadata" style="width: 70px; height: 70px; object-fit: cover; border-radius: 8px;"></video>
+                                    <span style="color: var(--text-color);"><%= video.description.substring(0, 30) %>...</span>
+                                </a>
+                            </td>
+                            <td><%= video.price %> TPYS</td>
+                            <td><%= video.salesCount %></td>
+                            <td><%= video.views %></td>
+                            <td style="color: var(--success-color);"><%= (video.price * CREATOR_EARNING_RATE * video.salesCount).toFixed(0) %> TPYS</td>
+                            <td>
+                                <a href="/post/<%= video._id %>/edit" class="btn btn-secondary" style="padding: 0.5rem 1rem;">Editar</a>
+                            </td>
+                        </tr>
+                    <% }) %>
+                <% } else { %>
+                    <tr><td colspan="6" style="text-align:center; padding: 2rem;">Aún no has publicado ningún video.</td></tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+<div class="dashboard-container" style="margin-top: 2rem;">
+    <h2><i class="fas fa-history"></i> Historial de Transacciones</h2>
+    <p>Aquí puedes ver todas tus ventas, suscripciones y donaciones. Recuerda que recibes el <strong><%= CREATOR_EARNING_RATE * 100 %>%</strong> de cada transacción.</p>
+    <div style="overflow-x: auto;">
+        <table class="dashboard-table">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Tipo</th>
+                    <th>Detalle</th>
+                    <th>Comprador</th>
+                    <th>Monto Bruto</th>
+                    <th>Tu Ganancia</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (transactions && transactions.length > 0) { %>
+                    <% transactions.forEach(t => { %>
+                        <tr>
+                            <td><%= formatDate(t.createdAt) %></td>
+                            <td>
+                                <% if(t.type === 'video_purchase') { %><span class="status-badge status-video">Venta</span><% } %>
+                                <% if(t.type === 'subscription') { %><span class="status-badge status-sub">Suscripción</span><% } %>
+                                <% if(t.type === 'donation') { %><span class="status-badge status-donation">Donación</span><% } %>
+                                <% if(t.type === 'achievement_reward') { %><span class="status-badge status-reward">Recompensa</span><% } %>
+                            </td>
+                            <td>
+                                <% if(t.postId && t.postId.description) { %>
+                                    <%= t.postId.description.substring(0, 30) %>...
+                                <% } else if (t.type === 'subscription') { %>
+                                    Suscripción mensual
+                                <% } else { %>
+                                    --
+                                <% } %>
+                            </td>
+                             <td>
+                                <% if (t.buyerId) { %>
+                                    <%= t.buyerId.username %>
+                                <% } else { %>
+                                    <span style="color:var(--light-gray)">Sistema</span>
+                                <% } %>
+                            </td>
+                            <td><%= t.amount.toFixed(0) %> TPYS</td>
+                            <td style="color: var(--success-color); font-weight: bold;">+<%= t.netEarning.toFixed(0) %> TPYS</td>
+                        </tr>
+                    <% }) %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 2rem;">Aún no has generado ninguna transacción.</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+<div class="dashboard-container" style="margin-top: 2rem;">
+    <h2><i class="fas fa-trophy"></i> Logros y Recompensas</h2>
+    <div class="achievements-card">
+         <div class="achievement">
+            <div class="achievement-info">
+                <span><i class="fas fa-users"></i> Consigue 10 suscriptores</span>
+                <span class="status">Recompensa: 500 TPYS</span>
+            </div>
+            <% if(achievements.tenSubscribers.claimed) { %>
+                <button class="btn btn-success" disabled>Reclamado</button>
+            <% } else if (achievements.tenSubscribers.met) { %>
+                <form action="/claim-achievement/tenSubscribers" method="POST"><button type="submit" class="btn btn-primary">Reclamar</button></form>
+            <% } else { %>
+                 <button class="btn btn-secondary" disabled>Bloqueado</button>
+            <% } %>
+        </div>
+        <div class="achievement">
+            <div class="achievement-info">
+                <span><i class="fas fa-user-plus"></i> Consigue 1000 seguidores</span>
+                <span class="status">Recompensa: 500 TPYS</span>
+            </div>
+             <% if(achievements.thousandFollowers.claimed) { %>
+                <button class="btn btn-success" disabled>Reclamado</button>
+            <% } else if (achievements.thousandFollowers.met) { %>
+                <form action="/claim-achievement/thousandFollowers" method="POST"><button type="submit" class="btn btn-primary">Reclamar</button></form>
+            <% } else { %>
+                 <button class="btn btn-secondary" disabled>Bloqueado</button>
+            <% } %>
+        </div>
+        <div class="achievement">
+            <div class="achievement-info">
+                <span><i class="fas fa-video"></i> Consigue 10 ventas de videos</span>
+                <span class="status">Recompensa: 500 TPYS</span>
+            </div>
+             <% if(achievements.tenVideoSales.claimed) { %>
+                <button class="btn btn-success" disabled>Reclamado</button>
+            <% } else if (achievements.tenVideoSales.met) { %>
+                <form action="/claim-achievement/tenVideoSales" method="POST"><button type="submit" class="btn btn-primary">Reclamar</button></form>
+            <% } else { %>
+                 <button class="btn btn-secondary" disabled>Bloqueado</button>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+
+<%- include('partials/footer.html') %>

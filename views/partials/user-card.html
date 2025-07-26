@@ -1,0 +1,16 @@
+<div class="user-card">
+    <a href="/user/<%= user.username %>">
+        <img src="<%= user.profilePic %>" alt="Foto de perfil" class="user-card-image">
+        <div class="user-card-info">
+            <strong>
+    <%= user.username %>
+    <% if(user.isVerified) { %>
+        <i class="fas fa-check-circle verification-badge" title="Cuenta Verificada"></i>
+    <% } %>
+</strong>
+<% if(!user.isVerified) { %>
+    <span class="location"><i class="fas fa-map-marker-alt"></i> <%= user.location %></span>
+<% } %>
+        </div>
+    </a>
+</div>

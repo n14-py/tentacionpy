@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuevo Anuncio - TentacionPY</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+
+<%- include('partials/header.html') %>
+
+<main class="container">
+    <div class="form-container">
+        
+        <div class.alert alert-info" style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; background-color: rgba(33, 150, 243, 0.1); padding: 1rem; border-radius: 8px;">
+            <i class="fas fa-lightbulb fa-2x" style="color: var(--info-color);"></i>
+            <div>
+                <strong>¿Quieres tener más éxito?</strong>
+                <p class="mb-0">Hemos preparado una guía completa con los mejores consejos para optimizar tu perfil, crear contenido y ganar más. <a href="/creator-tips" style="font-weight: bold;">¡Léela aquí!</a></p>
+            </div>
+        </div>
+
+        <h2>Crear Nueva Publicación</h2>
+        <p>Elige qué tipo de contenido quieres publicar para empezar.</p>
+        
+        <div id="post-type-selection" class="post-type-selector">
+            <div class="post-type-option" data-type="escort">
+                <i class="fas fa-image fa-3x"></i>
+                <h3>Anuncio de Escort</h3>
+                <p>Promociona tus servicios con fotos y detalles de contacto.</p>
+            </div>
+            <div class="post-type-option" data-type="video_sale">
+                <i class="fas fa-dollar-sign fa-3x"></i>
+                <h3>Video de Venta</h3>
+                <p>Sube un video y ponle un precio para que cualquiera lo compre.</p>
+            </div>
+            <div class="post-type-option" data-type="subscriber_video">
+                <i class="fas fa-star fa-3x"></i>
+                <h3>Video para Fans</h3>
+                <p>Publica un video exclusivo y gratuito solo para tus suscriptores.</p>
+            </div>
+        </div>
+
+        <form action="/new-post" method="POST" enctype="multipart/form-data" id="main-post-form" style="display: none;">
+            
+            <input type="hidden" id="post-type-input" name="type" value="">
+            <input type="hidden" id="subscriber-only-input" name="isSubscriberOnly" value="false">
+
+            <h3 id="form-title"></h3>
+            <hr>
+
+            <div class="form-group">
+                <label for="files"><strong>Paso 2:</strong> Sube tus archivos (hasta 10, el primero será la portada)</label>
+                <input type="file" id="files" name="files" class="form-control" multiple required accept="image/jpeg, image/png, image/jpg, video/mp4">
+            </div>
+
+            <div class="form-group">
+                <label for="description"><strong>Paso 3:</strong> Escribe una descripción atractiva</label>
+                <textarea id="description" name="description" rows="4" class="form-control" required placeholder="Describe tu contenido, qué ofreces, etc."></textarea>
+            </div>
+            
+            <div id="escort-fields" class="form-section">
+                <div class="form-group">
+                    <label for="whatsapp">Tu WhatsApp (Opcional)</label>
+                    <input type="text" id="whatsapp" name="whatsapp" class="form-control" placeholder="Tu número de contacto para agendar">
+                </div>
+                <div class="form-group">
+                    <label for="rate">Tarifa de referencia</label>
+                    <input type="text" id="rate" name="rate" class="form-control" placeholder="Ej: 500.000 Gs por hora">
+                </div>
+            </div>
+
+            <div id="video-sale-fields" class="form-section">
+                <div class="form-group">
+                    <label for="price">Precio de venta del video (en <img src="/img/tpy-coin.png" class="tpy-coin" alt="TPYS">TPYS)</label>
+                    <input type="number" id="price" name="price" class="form-control" min="1" placeholder="Ej: 250">
+                </div>
+            </div>
+            
+            <hr>
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary btn-block">Publicar Anuncio</button>
+                <button type="button" id="change-type-btn" class="btn btn-secondary btn-block" style="margin-top: 0.5rem;">Cambiar tipo de publicación</button>
+            </div>
+        </form>
+    </div>
+</main>
+
+<%- include('partials/footer.html') %>
+
+<style>
+    .post-type-selector {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-top: 2rem;
+    }
+    .post-type-option {
+        background-color: var(--surface-light-color);
+        padding: 2rem;
+        border-radius: var(--border-radius-soft);
+        text-align: center;
+        border: 2px solid var(--border-color);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .post-type-option:hover {
+        transform: translateY(-5px);
+        border-color: var(--primary-color);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    .post-type-option i { color: var(--primary-color); margin-bottom: 1rem; }
+    .post-type-option h3 { color: var(--text-color); }
+    .post-type-option p { color: var(--text-muted-color); font-size: 0.9rem; }
+    .form-section { display: none; }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const typeSelectionDiv = document.getElementById('post-type-selection');
+    const mainForm = document.getElementById('main-post-form');
+    const formTitle = document.getElementById('form-title');
+    const changeTypeBtn = document.getElementById('change-type-btn');
+    
+    const postTypeInput = document.getElementById('post-type-input');
+    const subscriberOnlyInput = document.getElementById('subscriber-only-input');
+    const filesInput = document.getElementById('files');
+
+    const escortFields = document.getElementById('escort-fields');
+    const videoSaleFields = document.getElementById('video-sale-fields');
+    const priceInput = document.getElementById('price');
+
+    typeSelectionDiv.addEventListener('click', (e) => {
+        const selection = e.target.closest('.post-type-option');
+        if (!selection) return;
+
+        const type = selection.dataset.type;
+        typeSelectionDiv.style.display = 'none';
+        mainForm.style.display = 'block';
+
+        // Ocultar todas las secciones específicas
+        escortFields.style.display = 'none';
+        videoSaleFields.style.display = 'none';
+        priceInput.required = false;
+
+        if (type === 'escort') {
+            formTitle.innerText = 'Creando Anuncio de Escort';
+            postTypeInput.value = 'image';
+            subscriberOnlyInput.value = 'false';
+            filesInput.accept = 'image/*';
+            escortFields.style.display = 'block';
+        } else if (type === 'video_sale') {
+            formTitle.innerText = 'Creando Video de Venta';
+            postTypeInput.value = 'video';
+            subscriberOnlyInput.value = 'false';
+            filesInput.accept = 'video/*';
+            videoSaleFields.style.display = 'block';
+            priceInput.required = true;
+        } else if (type === 'subscriber_video') {
+            formTitle.innerText = 'Creando Video para Suscriptores';
+            postTypeInput.value = 'video';
+            subscriberOnlyInput.value = 'true'; // Clave para marcarlo como exclusivo
+            filesInput.accept = 'video/*';
+        }
+    });
+
+    changeTypeBtn.addEventListener('click', () => {
+        mainForm.style.display = 'none';
+        typeSelectionDiv.style.display = 'grid';
+        mainForm.reset(); // Limpia el formulario
+    });
+});
+</script>
+
+</body>
+</html>

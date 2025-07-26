@@ -1,0 +1,47 @@
+<footer class="main-footer">
+    <div class="footer-content">
+        <div class="footer-section about">
+            <h3 class="footer-title">TentacionPY</h3>
+            <p>La comunidad de creadores de contenido para adultos más grande de Paraguay. Explora, conecta y disfruta.</p>
+        </div>
+
+        <div class="footer-section links">
+    <h4 class="footer-title">Enlaces</h4>
+    <ul>
+        <li><a href="/terms">Términos y Condiciones</a></li>
+        <li><a href="/privacy">Política de Privacidad</a></li>
+        <li><a href="/payout-info">Información de Pagos</a></li>
+        <li><a href="/creator-tips">Consejos para Creadores</a></li>
+        <li><a href="/faq">Preguntas Frecuentes</a></li> </ul>
+</div>
+
+        <div class="footer-section contact">
+            <h4 class="footer-title">Contacto</h4>
+            <ul class="contact-links-text">
+                <li><a href="https://wa.me/+595984028581" target="_blank">WhatsApp</a></li>
+                <li><a href="https://instagram.com/tentacionpyy" target="_blank">Instagram</a></li>
+                <li><a href="mailto:soportetentacionpy@gmail.com">Correo Electrónico</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        &copy; <%= new Date().getFullYear() %> TentacionPY | Todos los derechos reservados.
+    </div>
+</footer>
+
+<div id="confirmationModal" class="modal-background" style="display: none;">
+    <div class="modal-content">
+        <button class="close-button" id="modalCloseBtn">&times;</button>
+        <h3 id="modalTitle">Confirmar Acción</h3>
+        <p id="modalMessage">¿Estás seguro?</p>
+        <div id="modal-additional-content"></div>
+        <p id="modalBalanceInfo" style="margin-top: 1rem; color: var(--text-muted-color);"></p>
+        <div class="modal-actions">
+            <button id="modalCancelBtn" class="btn btn-secondary">Cancelar</button>
+            <button id="modalConfirmBtn" class="btn btn-primary">Confirmar</button>
+        </div>
+    </div>
+</div>
+
+<script src="/js/main.js"></script>
+</footer>

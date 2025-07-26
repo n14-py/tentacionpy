@@ -1,0 +1,88 @@
+<%- include('partials/header.html') %>
+
+<div class="page-header">
+    <h1>Editando Publicación</h1>
+    <a href="/profile" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Cancelar</a>
+</div>
+
+<div class="form-container">
+    <form action="/post/<%= post._id %>/edit" method="POST">
+        <div class="form-group">
+            <label for="description">Descripción</label>
+            <textarea id="description" name="description" required><%= post.description %></textarea>
+        </div>
+        <div class="form-group">
+            <label for="category">Categoría</label>
+            <select id="category" name="category" required>
+                <% CATEGORIES.forEach(cat => { %>
+                    <option value="<%= cat %>" <%= post.category === cat ? 'selected' : '' %>><%= cat %></option>
+                <% }) %>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="tags">Tags (separados por coma)</label>
+            <input type="text" id="tags" name="tags" value="<%= post.tags.join(', ') %>">
+        </div>
+
+        <% if(post.type === 'image') { %>
+            <div id="image-fields">
+                <div class="form-group">
+                    <label for="whatsapp">WhatsApp de Contacto (opcional)</label>
+                    <input type="text" id="whatsapp" name="whatsapp" value="<%= post.whatsapp %>">
+                </div>
+                 <div class="form-group">
+                    <label for="address">Dirección o Zona (Opcional)</label>
+                    <input type="text" id="address" name="address" value="<%= post.address %>">
+                </div>
+                <div class="form-group">
+                    <label for="services">Servicios (separados por coma)</label>
+                    <input type="text" id="services" name="services" value="<%= post.services.join(', ') %>">
+                </div>
+                <div class="form-group">
+                    <label for="rate">Tarifa</label>
+                    <input type="text" id="rate" name="rate" value="<%= post.rate %>">
+                </div>
+            </div>
+        <% } else { %>
+             <div id="video-fields">
+                <div class="form-group">
+                    <label for="price">Precio en TPYS (0 si es gratis)</label>
+                    <input type="number" id="price" name="price" value="<%= post.price %>" min="0">
+                </div>
+                <div class="form-group form-group-checkbox">
+                    <input type="checkbox" id="isSubscriberOnly" name="isSubscriberOnly" <%= post.isSubscriberOnly ? 'checked' : '' %>>
+                    <label for="isSubscriberOnly">Contenido exclusivo para suscriptores</label>
+                </div>
+            </div>
+        <% } %>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Guardar Cambios</button>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Lógica para deshabilitar el precio si es exclusivo para suscriptores
+    const subscriberCheckbox = document.getElementById('isSubscriberOnly');
+    const priceInput = document.getElementById('price');
+
+    const togglePriceField = () => {
+        if (subscriberCheckbox && priceInput) {
+            if (subscriberCheckbox.checked) {
+                priceInput.disabled = true;
+                priceInput.parentElement.style.opacity = '0.5';
+            } else {
+                priceInput.disabled = false;
+                priceInput.parentElement.style.opacity = '1';
+            }
+        }
+    };
+
+    if (subscriberCheckbox) {
+        subscriberCheckbox.addEventListener('change', togglePriceField);
+        togglePriceField(); // Ejecutar al cargar la página
+    }
+});
+</script>
+
+<%- include('partials/footer.html') %>

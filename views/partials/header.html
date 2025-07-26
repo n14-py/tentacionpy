@@ -1,0 +1,157 @@
+<header class="main-header">
+    <div class="navbar">
+        <div class="navbar-brand">
+            <a href="/feed">TentacionPY</a>
+        </div>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <div class="desktop-user-actions">
+            <% if (currentUser) { %>
+                <a href="/chat" class="nav-icon-link" title="Mensajes">
+                    <i class="fas fa-comments"></i>
+                </a>
+                <a href="/notifications" class="nav-icon-link" title="Notificaciones">
+                    <i class="fas fa-bell"></i>
+                    <% if (locals.unreadNotifications && unreadNotifications > 0) { %>
+                        <span class="notification-badge"><%= unreadNotifications %></span>
+                    <% } %>
+                </a>
+                <div class="user-menu">
+                    <img src="<%= currentUser.profilePic %>" alt="Avatar" class="user-avatar" id="user-avatar-toggle">
+                    <div class="user-dropdown" id="user-dropdown-menu">
+                        <a href="/profile">Mi Perfil</a>
+                        <a href="/my-videos">Mis Compras</a>
+                        <a href="/my-subscriptions">Mis Suscripciones</a>
+                        <a href="/my-likes">Mis Likes</a>
+                        <a href="/add-funds">Añadir Fondos</a>
+                        <div class="dropdown-divider"></div>
+                        <a href="/settings/dashboard">Panel de Creador</a>
+                        <a href="/settings/blocked">Usuarios Bloqueados</a>
+                        <% if (currentUser.isAdmin) { %>
+                            <a href="/admin/dashboard">Panel de Admin</a>
+                        <% } %>
+                        <div class="dropdown-divider"></div>
+                        <a href="/logout">Cerrar Sesión</a>
+                    </div>
+                </div>
+            <% } else { %>
+                <a href="/login" class="btn btn-secondary">Iniciar Sesión</a>
+                <a href="/register" class="btn btn-primary">Registrarse</a>
+            <% } %>
+        </div>
+
+        <div class="mobile-menu-icon" id="mobile-menu-open">
+            <i class="fas fa-bars"></i>
+        </div>
+    </div>
+</header>
+
+<nav class="mobile-nav-panel" id="mobile-nav">
+    <div class="mobile-nav-header">
+        <% if (currentUser) { %>
+            <div class="user-info">
+                <img src="<%= currentUser.profilePic %>" alt="Avatar" class="avatar">
+                <div>
+                    <strong><%= currentUser.username %></strong>
+                    <div class="tpy-balance"><%= currentUser.tpysBalance.toLocaleString('es-PY') %><img src="/img/tpy-coin.png" class="tpy-coin" alt="TPYS"></div>
+                </div>
+            </div>
+        <% } else { %>
+            <div class="navbar-brand">
+                <a href="/feed">TentacionPY</a>
+            </div>
+        <% } %>
+        <span class="close-btn" id="mobile-menu-close">&times;</span>
+    </div>
+
+    <div class="mobile-nav-body">
+        <% if (currentUser) { %>
+            <a href="/profile"><i class="fas fa-user-circle fa-fw"></i> Mi Perfil</a>
+            <a href="/new-post"><i class="fas fa-plus-circle fa-fw"></i> Nuevo Anuncio</a>
+            <a href="/chat"><i class="fas fa-comments fa-fw"></i> Mensajes</a>
+            <a href="/notifications"><i class="fas fa-bell fa-fw"></i> Notificaciones</a>
+            <a href="/my-videos"><i class="fas fa-play-circle fa-fw"></i> Mis Compras</a>
+            <a href="/my-subscriptions"><i class="fas fa-star fa-fw"></i> Mis Suscripciones</a>
+            <a href="/my-likes"><i class="fas fa-heart fa-fw"></i> Mis Likes</a>
+            <a href="/add-funds"><i class="fas fa-wallet fa-fw"></i> Añadir Fondos</a>
+            <div class="dropdown-divider"></div>
+            <a href="/settings/dashboard"><i class="fas fa-cog fa-fw"></i> Panel de Creador</a>
+            <a href="/settings/blocked"><i class="fas fa-user-slash fa-fw"></i> Bloqueados</a>
+            <% if (currentUser.isAdmin) { %>
+                <a href="/admin/dashboard"><i class="fas fa-user-shield fa-fw"></i> Panel de Admin</a>
+            <% } %>
+            <div class="dropdown-divider"></div>
+            <a href="/logout"><i class="fas fa-sign-out-alt fa-fw"></i> Cerrar Sesión</a>
+        <% } else { %>
+            <a href="/login" class="btn btn-secondary"><i class="fas fa-sign-in-alt fa-fw"></i> Iniciar Sesión</a>
+            <a href="/register" class="btn btn-primary"><i class="fas fa-user-plus fa-fw"></i> Registrarse</a>
+        <% } %>
+    </div>
+</nav>
+
+
+<script>
+    // Script definitivo y aislado para TODOS los menús del header
+    document.addEventListener('DOMContentLoaded', () => {
+        // ... toda la lógica del menú que ya solucionamos ...
+    });
+</script>
+
+</header>
+
+
+<script>
+    // Script definitivo y aislado para TODOS los menús del header
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- Lógica para el MENÚ DE PERFIL EN PC ---
+        const userAvatar = document.getElementById('user-avatar-toggle');
+        const userDropdown = document.getElementById('user-dropdown-menu');
+
+        if (userAvatar && userDropdown) {
+            userAvatar.addEventListener('click', (event) => {
+                event.stopPropagation(); // Evita que el clic se propague
+                userDropdown.classList.toggle('active');
+            });
+        }
+
+        // --- Lógica para el MENÚ HAMBURGUESA EN MÓVIL ---
+        const mobileMenuOpen = document.getElementById('mobile-menu-open');
+        const mobileMenuClose = document.getElementById('mobile-menu-close');
+        const mobileNav = document.getElementById('mobile-nav');
+
+        if (mobileMenuOpen && mobileNav) {
+            mobileMenuOpen.addEventListener('click', () => {
+                mobileNav.classList.add('active');
+            });
+        }
+        if (mobileMenuClose && mobileNav) {
+            mobileMenuClose.addEventListener('click', () => {
+                mobileNav.classList.remove('active');
+            });
+        }
+
+        // --- Listener global para CERRAR el menú de PC al hacer clic fuera ---
+        document.addEventListener('click', (event) => {
+            if (userDropdown && userDropdown.classList.contains('active')) {
+                if (!userDropdown.contains(event.target) && !userAvatar.contains(event.target)) {
+                    userDropdown.classList.remove('active');
+                }
+            }
+        });
+    });
+</script>
+
+</header>
+
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FQRRDC852H"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-FQRRDC852H');
+</script>
+
+</header>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= locals.title || 'Configuración' %> - TentacionPY</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+
+<%- include('../partials/header.html') %>
+
+<main class="container">
+    <div class="settings-layout">
+        <aside class="settings-sidebar">
+            <nav>
+                <a href="/settings/dashboard" class="<%= (locals.path && path.endsWith('/dashboard')) ? 'active' : '' %>">
+                    <i class="fas fa-tachometer-alt"></i> Panel
+                </a>
+                <a href="/settings/profile" class="<%= (locals.path && path.endsWith('/profile')) ? 'active' : '' %>">
+                    <i class="fas fa-user-edit"></i> Editar Perfil
+                </a>
+                <a href="/settings/subscriptions" class="<%= (locals.path && path.endsWith('/subscriptions')) ? 'active' : '' %>">
+                    <i class="fas fa-star"></i> Suscripciones
+                </a>
+                 <a href="/settings/automations" class="<%= (locals.path && path.endsWith('/automations')) ? 'active' : '' %>">
+                    <i class="fas fa-robot"></i> Mensajes Auto.
+                </a>
+                <a href="/settings/payouts" class="<%= (locals.path && path.endsWith('/payouts')) ? 'active' : '' %>">
+                    <i class="fas fa-hand-holding-usd"></i> Retiros
+                </a>
+                <a href="/settings/security" class="<%= (locals.path && path.endsWith('/security')) ? 'active' : '' %>">
+                <i class="fas fa-shield-alt"></i> Seguridad
+                </a>
+                </nav>
+        </aside>
+
+        <section class="settings-content">
+            <%- body %>
+        </section>
+    </div>
+</main>
+
+<%- include('../partials/footer.html') %>
+
+</body>
+</html>

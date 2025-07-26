@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Creador - TentacionPY</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+
+<%- include('../partials/header.html') %>
+
+<main class="container">
+    <div class="settings-layout">
+        <aside class="settings-sidebar">
+            <nav>
+                <a href="/settings/dashboard" class="active"><i class="fas fa-tachometer-alt"></i> Panel</a>
+                <a href="/settings/profile"><i class="fas fa-user-edit"></i> Editar Perfil</a>
+                <a href="/settings/subscriptions"><i class="fas fa-star"></i> Suscripciones</a>
+                <a href="/settings/automations"><i class="fas fa-robot"></i> Mensajes Auto.</a>
+                <a href="/settings/payouts"><i class="fas fa-hand-holding-usd"></i> Retiros</a>
+                <a href="/settings/security" class="<%= (locals.path && path.endsWith('/security')) ? 'active' : '' %>"><i class="fas fa-shield-alt"></i> Seguridad</a>
+            </nav>
+        </aside>
+
+        <section class="settings-content">
+            <div class="dashboard">
+                <h2>Tu Panel de Creador</h2>
+                <p>Aquí tienes un resumen de tu actividad y ganancias en la plataforma.</p>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h4>Saldo Actual</h4>
+                        <p class="stat-value"><%= currentUser.tpysBalance.toLocaleString('es-PY') %><img src="/img/tpy-coin.png" class="tpy-coin" alt="TPYS"></p>
+                        <span class="stat-description" style="color: var(--success-color); font-weight: bold;">≈ <%= (currentUser.tpysBalance * 100).toLocaleString('es-PY', {style: 'currency', currency: 'PYG'}) %></span>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Ganancias Totales (Neto)</h4>
+                        <p class="stat-value"><%= (locals.totalNetEarnings || 0).toLocaleString('es-PY') %><img src="/img/tpy-coin.png" class="tpy-coin" alt="TPYS"></p>
+                        <span class="stat-description">Total de TPYS recibidos después de comisiones.</span>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Suscriptores Activos</h4>
+                        <p class="stat-value"><%= locals.activeSubscribersCount || 0 %></p>
+                        <span class="stat-description">Usuarios actualmente suscritos a tu perfil.</span>
+                    </div>
+                </div>
+
+                <div class="final-transactions-list">
+                    <h3>Últimas Transacciones</h3>
+                     <% if (locals.transactions && transactions.length > 0) { %>
+                        <div class="transaction-items-container">
+                            <% transactions.slice(0, 10).forEach(tx => { %>
+                                <div class="transaction-card">
+                                    <div class="transaction-card-header">
+                                        <div class="transaction-type">
+                                            <% if (tx.type === 'video_purchase') { %> <span class="badge purchase">Venta Video</span> <% } %>
+                                            <% if (tx.type === 'subscription') { %> <span class="badge subscription">Suscripción</span> <% } %>
+                                            <% if (tx.type === 'donation') { %> <span class="badge donation">Donación</span> <% } %>
+                                            <% if (tx.type === 'chat_tip') { %> <span class="badge tip">Propina Chat</span> <% } %>
+                                        </div>
+                                        <div class="transaction-net-earning">
+                                            +<%= tx.netEarning.toLocaleString('es-PY') %><img src="/img/tpy-coin.png" class="tpy-coin" alt="TPYS">
+                                        </div>
+                                    </div>
+                                    <div class="transaction-card-body">
+                                        <div class="transaction-detail-row">
+                                            <span>Usuario:</span>
+                                            <strong><%= tx.buyerId ? tx.buyerId.username : 'N/A' %></strong>
+                                        </div>
+                                        <div class="transaction-detail-row">
+                                            <span>Monto Bruto:</span>
+                                            <span><%= tx.amount.toLocaleString('es-PY') %><img src="/img/tpy-coin.png" class="tpy-coin" alt="TPYS"></span>
+                                        </div>
+                                        <div class="transaction-detail-row">
+                                            <span>Fecha:</span>
+                                            <span><%= formatDate(tx.createdAt) %></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            <% }); %>
+                        </div>
+                    <% } else { %>
+                        <p class="no-transactions-placeholder">Aún no tienes transacciones.</p>
+                    <% } %>
+                </div>
+            </div>
+        </section>
+    </div>
+</main>
+
+<%- include('../partials/footer.html') %>
+
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usuarios Bloqueados - TentacionPY</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <%- include('../partials/header.html') %> <main class="main-container">
+        <div class="list-container">
+            <h1>Usuarios Bloqueados</h1>
+            <p>Estos son los usuarios que has bloqueado. No podrán ver tu perfil ni interactuar contigo.</p>
+            
+            <% if (blockedUsers && blockedUsers.length > 0) { %>
+                <div class="user-list">
+                    <% blockedUsers.forEach(blocked => { %>
+                        <div class="user-list-item">
+                            <div class="user-info">
+                                <img src="<%= blocked.profilePic %>" alt="Avatar de <%= blocked.username %>" class="avatar">
+                                <span><%= blocked.username %></span>
+                            </div>
+                            <form class="block-form" data-user-id="<%= blocked._id %>">
+                               <button type="submit" class="btn btn-secondary">Desbloquear</button>
+                            </form>
+                        </div>
+                    <% }); %>
+                </div>
+            <% } else { %>
+                <div class="empty-state">
+                    <i class="fas fa-user-shield"></i>
+                    <p>No has bloqueado a ningún usuario.</p>
+                </div>
+            <% } %>
+        </div>
+    </main>
+
+    <%- include('../partials/footer.html') %>
+
+    <script>
+    document.querySelectorAll('.block-form').forEach(form => {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const userId = e.target.dataset.userId;
+            const response = await fetch(`/user/${userId}/block`, { method: 'POST' });
+            const data = await response.json();
+            if (data.success) {
+                // Recargar la página para ver la lista actualizada
+                window.location.reload(); 
+            } else {
+                alert('Error al desbloquear al usuario.');
+            }
+        });
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+<%- include('partials/header.html') %>
+
+<div class="container">
+    <div class="purchase-success-container form-container" style="text-align: center;">
+        <div class="icon" style="font-size: 4rem; color: var(--success-color); margin-bottom: 1rem;">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <h1>¡Compra Exitosa!</h1>
+        <p>Has desbloqueado un nuevo video. ¡Disfrútalo!</p>
+        
+        <% if (post && post.files && post.files.length > 0) { %>
+            <video src="<%= post.files[0] %>#t=2" class="video-thumbnail" muted preload="metadata" style="width: 100%; max-width: 300px; border-radius: var(--border-radius-soft); margin: 1rem auto;"></video>
+        <% } %>
+
+        <div class="actions" style="display: flex; gap: 1rem; justify-content: center; margin-top: 1.5rem;">
+            <a href="/post/<%= post._id %>" class="btn btn-primary">Ver Video Ahora</a>
+            <a href="/feed" class="btn btn-secondary">Seguir Explorando</a>
+        </div>
+    </div>
+</div>
+
+<%- include('partials/footer.html') %>

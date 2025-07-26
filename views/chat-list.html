@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Chats - TentacionPY</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+
+<%- include('partials/header.html') %>
+
+<main class="container">
+    <div class="chat-layout">
+        <div class="chat-list-container">
+            <div class="chat-list-header">
+                <h2>Mis Conversaciones</h2>
+            </div>
+            
+            <div class="conversations">
+                <% if (locals.conversations && conversations.length > 0) { %>
+                    <% conversations.forEach(convo => { %>
+                        <% 
+                           const otherUser = convo.participants.find(p => p && !p._id.equals(currentUser._id));
+                           if (otherUser) { 
+                        %>
+                            <a href="/chat/<%= convo._id %>" class="conversation-item">
+                                <img src="<%= otherUser.profilePic %>" alt="Avatar de <%= otherUser.username %>" class="avatar-lg">
+                                <div class="conversation-details">
+                                    <div class="conversation-title">
+                                        <strong><%= otherUser.username %></strong>
+                                        <% if (convo.lastMessage) { %>
+                                           <span class="conversation-time"><%= formatDate(convo.lastMessage.createdAt) %></span>
+                                        <% } %>
+                                    </div>
+                                    <div class="conversation-snippet">
+                                        <% if (convo.lastMessage) { %>
+                                            <p><%= convo.lastMessage.text ? convo.lastMessage.text.slice(0, 50) : '...' %></p>
+                                        <% } else { %>
+                                            <p><em>Inicia la conversación...</em></p>
+                                        <% } %>
+                                    </div>
+                                </div>
+                            </a>
+                        <% } %>
+                    <% }); %>
+                <% } else { %>
+                    <div class="no-results-card">
+                        <h3>No tienes conversaciones activas</h3>
+                        <p>Cuando te suscribas al perfil de un creador, podrás iniciar un chat desde su página de perfil.</p>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</main>
+
+<%- include('partials/footer.html') %>
+
+</body>
+</html>

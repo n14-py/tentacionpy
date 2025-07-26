@@ -1,0 +1,85 @@
+<%- include('partials/header.html') %>
+
+<div class="page-header">
+    <h1>Búsqueda de Perfiles</h1>
+</div>
+
+<div class="form-container" style="max-width: 800px; margin-left: auto; margin-right: auto;">
+    <form action="/search" method="POST" class="search-form-page" style="display:flex; gap: 1rem;">
+        <input type="text" name="q" placeholder="Buscar por nombre de usuario o ubicación..." value="<%= query || '' %>" required style="flex-grow: 1;">
+        <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i></button>
+    </form>
+
+    <% if (typeof results !== 'undefined') { %>
+        <div class="search-results" style="margin-top: 2rem;">
+            <% if(results.length > 0) { %>
+                 <h2 style="font-size: 1.2rem; margin-bottom: 1rem;">Resultados para "<%= query %>"</h2>
+                 <div class="follow-list-container" style="background: transparent; padding: 0; box-shadow: none;">
+                    <ul class="follow-list">
+                        <% results.forEach(item => { %>
+                            <li class="follow-item">
+                                <a href="/user/<%= item._id %>" class="follow-user-info">
+                                    <img src="<%= item.profilePic %>" alt="Foto de perfil de <%= item.username %>">
+                                    <span><%= item.username %></span>
+                                </a>
+                                <% if (currentUser && !currentUser._id.equals(item._id)) { %>
+                                    <form action="/user/<%= item._id %>/follow" method="POST" style="display: contents;">
+                                        <button type="submit" class="btn follow-button <%= currentUser.following.includes(item._id) ? 'btn-secondary' : 'btn-primary' %>">
+                                            <%= currentUser.following.includes(item._id) ? 'Dejar de Seguir' : 'Seguir' %>
+                                        </button>
+                                    </form>
+                                <% } %>
+                            </li>
+                        <% }) %>
+                    </ul>
+                </div>
+            <% } else { %>
+                <p style="text-align: center; color: var(--light-gray); padding: 2rem;">No se encontraron resultados para "<%= query %>".</p>
+            <% } %>
+        </div>
+    <% } %>
+</div>
+
+<style>
+    .follow-list-container {
+        max-width: 700px;
+        margin: auto;
+    }
+    .follow-list {
+        list-style: none;
+        padding: 0;
+    }
+    .follow-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem;
+        border-radius: var(--border-radius-soft);
+        transition: background-color 0.2s;
+    }
+    .follow-item:not(:last-child) {
+        border-bottom: 1px solid #333;
+    }
+    .follow-item:hover {
+        background-color: #2a2a2a;
+    }
+    .follow-user-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        color: var(--text-color);
+        font-weight: 600;
+    }
+    .follow-user-info img {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    .follow-button {
+        font-size: 0.8rem;
+        padding: 0.5rem 1rem;
+    }
+</style>
+
+<%- include('partials/footer.html') %>

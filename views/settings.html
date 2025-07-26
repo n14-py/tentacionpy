@@ -1,0 +1,57 @@
+<%- include('partials/header.html') %>
+
+<div class="page-header">
+    <h1>Configuración de la Cuenta</h1>
+    <p>Gestiona tu perfil, monetización, seguridad y más.</p>
+</div>
+
+<div class="form-container">
+    <h2><i class="fas fa-user-cog" style="color: var(--accent-color);"></i> Opciones de Cuenta</h2>
+    <div class="settings-links">
+        <a href="/edit-profile" class="settings-link"><i class="fas fa-user-edit"></i> Editar Perfil</a>
+        <a href="/my-likes" class="settings-link"><i class="fas fa-heart"></i> Ver Mis Likes</a>
+    </div>
+
+    <hr>
+    
+    <h2><i class="fas fa-money-bill-wave" style="color: var(--success-color);"></i> Monetización</h2>
+    <div class="settings-links">
+        <a href="/settings/subscriptions" class="settings-link"><i class="fas fa-star"></i> Gestionar Suscripciones</a>
+        <a href="/add-funds" class="settings-link"><i class="fas fa-wallet"></i> Añadir Fondos (TPYS)</a>
+        <a href="/withdrawal" class="settings-link"><i class="fas fa-university"></i> Retirar Ganancias</a>
+        <a href="/payout-info" class="settings-link"><i class="fas fa-info-circle"></i> ¿Cómo funcionan los pagos?</a>
+    </div>
+
+    <hr>
+    
+    <h2><i class="fas fa-info-circle" style="color: var(--light-gray);"></i> Información</h2>
+     <div class="settings-links">
+        <a href="/terms" class="settings-link"><i class="fas fa-file-contract"></i> Términos y Condiciones</a>
+    </div>
+
+    <hr>
+
+    <h2><i class="fas fa-exclamation-triangle" style="color: var(--error-color);"></i> Zona de Peligro</h2>
+     <% if (locals.error) { %>
+        <div class="error-message"><%= error %></div>
+    <% } %>
+     <% if (locals.success) { %>
+        <div class="success-message"><%= success %></div>
+    <% } %>
+    <p>Esta acción es <strong>permanente</strong> y no se puede deshacer. Se borrarán todos tus datos, publicaciones, y comentarios.</p>
+    
+    <form id="delete-account-form" action="/settings/delete-account" method="POST">
+        <div class="form-group">
+            <label for="password">Introduce tu contraseña para confirmar (si no te registraste con Google)</label>
+            <input type="password" id="password" name="password">
+        </div>
+        <button type="button" class="btn btn-danger confirm-action-btn" 
+            data-message="¿Estás completamente seguro de que quieres borrar tu cuenta para siempre?" 
+            data-form-id="delete-account-form"
+            style="width: 100%;">
+            Eliminar mi cuenta permanentemente
+        </button>
+    </form>
+</div>
+
+<%- include('partials/footer.html') %>

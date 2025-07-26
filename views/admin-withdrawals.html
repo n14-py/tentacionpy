@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestionar Retiros - Admin</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+
+<%- include('partials/header.html') %>
+
+<main class="container">
+    <div class="page-header">
+        <h1><i class="fas fa-tasks"></i> Gestión de Retiros</h1>
+        <p>Revisa y procesa las solicitudes de retiro de los creadores.</p>
+    </div>
+
+    <div class="admin-table-container">
+        <% if (locals.withdrawals && withdrawals.length > 0) { %>
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Usuario</th>
+                        <th>Monto (Gs.)</th>
+                        <th>Método</th>
+                        <th>Detalles</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% withdrawals.forEach(w => { %>
+                        <tr>
+                            <td><%= formatDate(w.createdAt) %></td>
+                            <td><%= w.userId ? w.userId.username : 'Usuario Eliminado' %></td>
+                            <td><%= w.amount.toLocaleString('es-PY') %></td>
+                            <td><%= w.method %></td>
+                            <td class="details-cell">
+                                <% if (w.method === 'transferencia') { %>
+                                    <strong>Banco:</strong> <%= w.details.bankName %><br>
+                                    <strong>N° Cuenta:</strong> <%= w.details.accountNumber %><br>
+                                    <strong>Titular:</strong> <%= w.details.fullName %><br>
+                                    <strong>CI:</strong> <%= w.details.ci %>
+                                <% } else { %>
+                                    <strong>Teléfono:</strong> <%= w.details.phone %><br>
+                                    <strong>Nombre:</strong> <%= w.details.fullName %><br>
+                                    <strong>CI:</strong> <%= w.details.ci %>
+                                <% } %>
+                            </td>
+                            <td>
+                                <span class="badge status-<%= w.status.toLowerCase() %>"><%= w.status %></span>
+                            </td>
+                            <td>
+                                <% if (w.status === 'Pendiente') { %>
+                                    <div class="admin-actions">
+                                        <form action="/admin/withdrawal/<%= w._id %>/update" method="POST">
+                                            <input type="hidden" name="status" value="Procesado">
+                                            <button type="submit" class="btn btn-sm btn-success">Aceptar</button>
+                                        </form>
+                                        <form action="/admin/withdrawal/<%= w._id %>/update" method="POST">
+                                            <input type="hidden" name="status" value="Rechazado">
+                                            <button type="submit" class="btn btn-sm btn-danger">Rechazar</button>
+                                        </form>
+                                    </div>
+                                <% } else { %>
+                                    <span>N/A</span>
+                                <% } %>
+                            </td>
+                        </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+        <% } else { %>
+            <div class="no-results-card">
+                <h3>No hay solicitudes de retiro pendientes.</h3>
+            </div>
+        <% } %>
+    </div>
+</main>
+
+<%- include('partials/footer.html') %>
+
+</body>
+</html>

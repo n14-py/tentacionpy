@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Información de Pagos - TentacionPY</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+
+<%- include('partials/header.html') %>
+
+<main class="container">
+    <div class="static-page-container">
+        <h1><i class="fas fa-hand-holding-usd" style="color: var(--primary-color);"></i></h1>
+        <h1>Información de Pagos para Creadores</h1>
+        <p>Aquí te explicamos de forma clara y sencilla cómo funcionan las ganancias y los retiros en TentacionPY.</p>
+        
+        <hr>
+
+        <h2><i class="fas fa-exchange-alt"></i> Tasa de Conversión: De TPYS a Dinero Real</h2>
+        <p>Todas las ganancias dentro de la plataforma se manejan con nuestra moneda virtual, los TPYS. Cuando decidas retirar tus fondos, aplicamos una tasa de conversión fija y transparente:</p>
+        <div class="rate-box" style="background-color: var(--surface-light-color); padding: 1.5rem; border-radius: var(--border-radius-soft); text-align: center; font-size: 1.5rem; font-weight: bold; margin: 1.5rem 0;">
+            100 <img src="/img/tpy-coin.png" class="tpy-coin" alt="TPYS"> = 10.000 Gs.
+        </div>
+
+        <h2><i class="fas fa-cut"></i> Comisión de la Plataforma: Tú Ganas Más</h2>
+        <p>Para mantener el sitio funcionando y en constante mejora, TentacionPY retiene una comisión de cada transacción. Hemos diseñado nuestro sistema para que tú, como creador, te lleves la mayor parte.</p>
+        <ul>
+            <li><strong style="color: var(--success-color); font-size: 1.2rem;">Tú recibes el 55%</strong> de cada venta, suscripción o donación.</li>
+            <li>La plataforma se queda con el 45% para cubrir costos operativos, de servidores y desarrollo.</li>
+        </ul>
+        <h4>Ejemplo Práctico (Venta de un Video)</h4>
+        <p>Imagina que vendes un video por <strong>1.000 <img src="/img/tpy-coin.png" class="tpy-coin" alt="TPYS"></strong>:</p>
+        <ol style="padding-left: 20px;">
+            <li>El usuario paga 1.000 TPYS.</li>
+            <li>La comisión de la plataforma (45%) es de 450 TPYS.</li>
+            <li><strong style="color: var(--success-color);">Se acreditan 550 TPYS a tu saldo.</strong> (Equivalente a 55.000 Gs. para retirar).</li>
+        </ol>
+
+        <h2><i class="fas fa-tasks"></i> Proceso de Retiro: Fácil y Rápido</h2>
+        <p>Retirar tus ganancias es un proceso sencillo:</p>
+        <ul>
+            <li><strong>Monto Mínimo de Retiro:</strong> Debes tener un saldo equivalente a por lo menos <strong style="color: var(--success-color);">30.000 Gs.</strong> para poder solicitar un pago (es decir, 300 TPYS en tu cuenta).</li>
+            <li><strong>Solicitud:</strong> Ve a tu <a href="/settings/dashboard">Panel de Creador</a> y haz clic en la sección de <a href="/settings/payouts">"Retiros"</a> para iniciar el proceso.</li>
+            <li><strong>Plazo de Pago:</strong> Una vez solicitas tu retiro, nuestro equipo lo procesará y lo recibirás en un plazo máximo de <strong>3 días hábiles</strong>.</li>
+        </ul>
+
+        <div style="text-align: center; margin-top: 3rem;">
+            <a href="/settings/payouts" class="btn btn-primary">Ir a la Sección de Retiros</a>
+        </div>
+    </div>
+</main>
+
+<%- include('partials/footer.html') %>
+
+</body>
+</html>

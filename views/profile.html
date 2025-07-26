@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil de <%= locals.userProfile ? userProfile.username : 'Usuario' %> - TentacionPY</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+
+<%# La ruta es correcta porque este archivo está en la raíz de /views %>
+<%- include('partials/header.html') %>
+
+<% if (locals.userProfile) { %>
+<main class="container">
+    <div class="profile-header">
+        <div class="profile-avatar">
+            <img src="<%= userProfile.profilePic %>" alt="Foto de perfil de <%= userProfile.username %>">
+        </div>
+        <div class="profile-info">
+            <div class="profile-title">
+                <h1 style="display: inline-flex; align-items: center; gap: 8px;">
+                    <%= userProfile.username %>
+                    <% if (userProfile.isVerified) { %>
+                        <i class="fas fa-check-circle verification-badge" title="Cuenta Verificada"></i>
+                    <% } %>
+                </h1>
+                <div class="profile-actions">
+                    <a href="/settings/profile" class="btn btn-secondary">Editar Perfil</a>
+                    <a href="/new-post" class="btn btn-primary">Crear Anuncio</a>
+                    <button id="share-profile-btn" class="btn btn-secondary"><i class="fas fa-share-alt"></i> Compartir Perfil</button>
+                </div>
+            </div>
+
+            <div class="profile-stats">
+                <span><strong><%= posts ? posts.length : 0 %></strong> publicaciones</span>
+                <a href="/user/<%= userProfile.username %>/list/followers">
+                    <strong><%= userProfile.followers ? userProfile.followers.length : 0 %></strong> seguidores
+                </a>
+                <a href="/user/<%= userProfile.username %>/list/following">
+                    <strong><%= userProfile.following ? userProfile.following.length : 0 %></strong> siguiendo
+                </a>
+            </div>
+            
+            <% if (userProfile.bio) { %>
+                <p class="profile-bio"><%= userProfile.bio %></p>
+            <% } %>
+        </div>
+    </div>
+
+    <div class="profile-tabs">
+        <a href="/user/<%= userProfile.username %>" class="tab-link active"><i class="fas fa-th"></i> PUBLICACIONES</a>
+        <a href="/my-likes" class="tab-link"><i class="fas fa-heart"></i> MIS LIKES</a>
+        <a href="/my-videos" class="tab-link"><i class="fas fa-video"></i> MIS COMPRAS</a>
+    </div>
+
+    <div class="post-grid">
+        <% if (posts && posts.length > 0) { %>
+            <% posts.forEach(post => { %>
+                <%# Esta es la única línea necesaria para mostrar cada post, ya no hay duplicados %>
+                <%- include('partials/post-card.html', { post: post }) %>
+            <% }); %>
+        <% } else { %>
+            <div class="no-results-card">
+                <h3>Aún no has publicado nada</h3>
+                <p>¡Es hora de crear tu primer anuncio y empezar a ganar seguidores!</p>
+                <a href="/new-post" class="btn btn-primary">Crear mi primer anuncio</a>
+            </div>
+        <% } %>
+    </div>
+</main>
+<% } else { %>
+    <main class="container">
+        <div class="error-container">
+            <h2>Usuario no encontrado</h2>
+            <p>El perfil que buscas no existe o ha sido eliminado.</p>
+            <a href="/feed" class="btn btn-primary">Volver al inicio</a>
+        </div>
+    </main>
+<% } %>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const shareButton = document.getElementById('share-profile-btn');
+    if (shareButton) {
+        shareButton.addEventListener('click', () => {
+            const profileUrl = `${window.location.origin}/user/<%= userProfile.username %>`;
+            navigator.clipboard.writeText(profileUrl).then(() => {
+                const originalText = shareButton.innerHTML;
+                shareButton.innerHTML = '¡Enlace Copiado!';
+                shareButton.disabled = true;
+
+                setTimeout(() => {
+                    shareButton.innerHTML = originalText;
+                    shareButton.disabled = false;
+                }, 2000);
+            }).catch(err => {
+                console.error('Error al copiar el enlace: ', err);
+                alert('No se pudo copiar el enlace. Inténtalo manualmente.');
+            });
+        });
+    }
+});
+</script>
+
+<%- include('partials/footer.html') %>
+
+</body>
+</html>

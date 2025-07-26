@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Perfil - TentacionPY</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+
+<%# RUTA CORREGIDA con ../ para que funcione desde la subcarpeta /settings %>
+<%- include('../partials/header.html') %>
+
+<main class="container">
+    <div class="settings-layout">
+        <aside class="settings-sidebar">
+            <nav>
+                <a href="/settings/dashboard"><i class="fas fa-tachometer-alt"></i> Panel</a>
+                <a href="/settings/profile" class="active"><i class="fas fa-user-edit"></i> Editar Perfil</a>
+                <a href="/settings/subscriptions"><i class="fas fa-star"></i> Suscripciones</a>
+                <a href="/settings/automations"><i class="fas fa-robot"></i> Mensajes Auto.</a>
+                <a href="/settings/payouts"><i class="fas fa-hand-holding-usd"></i> Retiros</a>
+                <a href="/settings/security" class="<%= (locals.path && path.endsWith('/security')) ? 'active' : '' %>"><i class="fas fa-shield-alt"></i> Seguridad</a>
+            </nav>
+        </aside>
+
+        <section class="settings-content">
+            <div class="form-container settings-form">
+                <h2>Editar Perfil</h2>
+                <p>Mantén tu información actualizada para que tus seguidores y potenciales clientes te encuentren fácilmente.</p>
+                <hr>
+                
+                <form action="/settings/profile" method="POST" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="profilePic">Foto de Perfil</label>
+                        <div class="profile-pic-preview">
+                            <img src="<%= (locals.currentUser && currentUser.profilePic) ? currentUser.profilePic : '/img/default.png' %>" alt="Vista previa de la foto de perfil">
+                            <input type="file" id="profilePic" name="profilePic" class="form-control" accept="image/jpeg, image/png, image/jpg">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="username">Nombre de Usuario</label>
+                        <input type="text" id="username" name="username" class="form-control" value="<%= (locals.currentUser && currentUser.username) || '' %>" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="bio">Biografía</label>
+                        <textarea id="bio" name="bio" rows="4" class="form-control" placeholder="Habla un poco sobre ti, lo que ofreces, etc."><%= (locals.currentUser && currentUser.bio) || '' %></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="whatsapp">WhatsApp</label>
+                        <input type="text" id="whatsapp" name="whatsapp" class="form-control" value="<%= (locals.currentUser && currentUser.whatsapp) || '' %>" placeholder="Tu número de contacto">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="location">Ubicación</label>
+                        <select id="location" name="location" class="form-control">
+                            <% if (locals.CITIES && locals.currentUser) { %>
+                                <% CITIES.forEach(city => { %>
+                                    <option value="<%= city %>" <%= currentUser.location === city ? 'selected' : '' %>><%= city %></option>
+                                <% }); %>
+                            <% } %>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="gender">Género</label>
+                        <select id="gender" name="gender" class="form-control">
+                             <% const genders = ['Mujer', 'Hombre', 'Trans']; %>
+                             <% genders.forEach(gender => { %>
+                                <option value="<%= gender %>" <%= (locals.currentUser && currentUser.gender === gender) ? 'selected' : '' %>><%= gender %></option>
+                             <% }); %>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="orientation">Orientación</label>
+                        <select id="orientation" name="orientation" class="form-control">
+                            <% const orientations = ['Heterosexual', 'Homosexual', 'Bisexual']; %>
+                            <% orientations.forEach(orientation => { %>
+                                <option value="<%= orientation %>" <%= (locals.currentUser && currentUser.orientation === orientation) ? 'selected' : '' %>><%= orientation %></option>
+                            <% }); %>
+                        </select>
+                    </div>
+
+                    <hr>
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary btn-block">Guardar Cambios</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </div>
+</main>
+
+<%- include('../partials/footer.html') %>
+
+</body>
+</html>

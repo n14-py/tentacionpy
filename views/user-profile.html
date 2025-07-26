@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil de <%= locals.userProfile ? userProfile.username : 'Usuario' %> - TentacionPY</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+
+<%- include('partials/header.html') %>
+
+<% if (locals.userProfile) { %>
+<main class="container">
+    <div class="profile-header">
+        <div class="profile-avatar">
+            <img src="<%= userProfile.profilePic %>" alt="Foto de perfil de <%= userProfile.username %>">
+        </div>
+        <div class="profile-info">
+            <div class="profile-title">
+                <h1 style="display: inline-flex; align-items: center; gap: 8px;">
+    <%= userProfile.username %>
+    <% if (userProfile.isVerified) { %>
+        <i class="fas fa-check-circle verification-badge" title="Cuenta Verificada"></i>
+    <% } %>
+</h1>
+                
+                <div class="profile-actions">
+    <% if (currentUser) { %>
+        <% if (!currentUser._id.equals(userProfile._id)) { %>
+            <% const isFollowing = currentUser.following && currentUser.following.some(id => id.equals(userProfile._id)); %>
+            <form action="/user/<%= userProfile._id %>/follow" method="POST" style="display: contents;">
+                <button type="submit" class="btn <%= isFollowing ? 'btn-secondary' : 'btn-primary' %>">
+                    <%= isFollowing ? 'Siguiendo' : 'Seguir' %>
+                </button>
+            </form>
+
+            <% if (isSubscribed) { %>
+                <a href="/chat/with/<%= userProfile._id %>" class="btn btn-secondary">Enviar Mensaje</a>
+            <% } else if (userProfile.subscriptionSettings && userProfile.subscriptionSettings.isActive) { %>
+                <button class="btn btn-primary btn-subscribe" data-creator-id="<%= userProfile._id %>" data-price="<%= userProfile.subscriptionSettings.price %>" data-creator-name="<%= userProfile.username %>">
+                    Suscribirse por <%= userProfile.subscriptionSettings.price %><img src="/img/tpy-coin.png" class="tpy-coin" alt="TPYS">
+                </button>
+            <% } %>
+
+            <div class="profile-options-menu">
+                <button id="options-menu-btn" class="icon-btn"><i class="fas fa-ellipsis-v"></i></button>
+                <div id="options-dropdown" class="options-dropdown">
+                    <a href="#" id="block-user-btn" data-user-id="<%= userProfile._id %>">
+                        <i class="fas fa-user-slash"></i> Bloquear Usuario
+                    </a>
+                    <a href="/report?type=user&id=<%= userProfile._id %>">
+                        <i class="fas fa-flag"></i> Reportar Usuario
+                    </a>
+                </div>
+            </div>
+        <% } %>
+    <% } else { %>
+        <a href="/login" class="btn btn-primary">Seguir</a>
+        <% if (userProfile.subscriptionSettings && userProfile.subscriptionSettings.isActive) { %>
+            <a href="/login" class="btn btn-primary">
+                Suscribirse por <%= userProfile.subscriptionSettings.price %><img src="/img/tpy-coin.png" class="tpy-coin" alt="TPYS">
+            </a>
+        <% } %>
+         <a href="/login" class="btn btn-secondary">Enviar Mensaje</a>
+    <% } %>
+</div>
+            </div>
+
+            <div class="profile-stats">
+                <span><strong><%= posts ? posts.length : 0 %></strong> publicaciones</span>
+                <a href="/user/<%= userProfile.username %>/list/followers">
+                    <strong><%= userProfile.followers ? userProfile.followers.length : 0 %></strong> seguidores
+                </a>
+                <a href="/user/<%= userProfile.username %>/list/following">
+                    <strong><%= userProfile.following ? userProfile.following.length : 0 %></strong> siguiendo
+                </a>
+            </div>
+            <% if (userProfile.bio) { %>
+                <p class="profile-bio"><%= userProfile.bio %></p>
+            <% } %>
+        </div>
+    </div>
+
+    <div class="profile-tabs">
+        <a href="#" class="tab-link active"><i class="fas fa-th"></i> PUBLICACIONES</a>
+    </div>
+
+    <div class="post-grid">
+         <% posts.forEach(post => { %>
+            <div class="post-card">
+     <% if (currentUser && !currentUser._id.equals(userProfile._id)) { %>
+    <a href="/report?type=post&id=<%= post._id %>" class="report-post-icon" title="Reportar publicación">
+        <i class="fas fa-flag"></i>
+    </a>
+    <% } %>
+    <a href="/anuncio/<%= post._id %>" class="post-card-link">
+        <% if (post.files && post.files.length > 0) { %>
+            <img src="<%= post.files[0] %>" alt="Post de <%= userProfile.username %>" class="post-card-image">
+        <% } %>
+        <% if (post.isSubscriberOnly || (post.type === 'video' && post.price > 0)) { %>
+            <div class="content-lock-icon"><i class="fas fa-lock"></i></div>
+        <% } %>
+        <% if (post.type === 'video') { %>
+            <div class="video-overlay"><i class="fas fa-play"></i></div>
+        <% } %>
+    </a>
+    <div class="post-card-info">
+        <div class="post-card-stats solo">
+            <span><i class="fas fa-heart"></i> <%= post.likes ? post.likes.length : 0 %></span>
+            <span><i class="fas fa-eye"></i> <%= post.views || 0 %></span>
+            <span><i class="fas fa-comments"></i> <%= post.comments ? post.comments.length : 0 %></span>
+        </div>
+    </div>
+</div>
+
+<%- include('partials/post-card.html', { post: post }) %>
+        <% }); %>
+
+        <% if (!posts || posts.length === 0) { %>
+            <div class="no-results-card">
+                <h3>Este usuario aún no ha publicado nada</h3>
+                <p>¡Vuelve más tarde para ver su contenido!</p>
+            </div>
+        <% } %>
+    </div>
+</main>
+<% } else { %>
+    <main class="container">
+        <div class="error-container">
+            <h2>Usuario no encontrado</h2>
+            <p>El perfil que buscas no existe o ha sido eliminado.</p>
+            <a href="/feed" class="btn btn-primary">Volver al inicio</a>
+        </div>
+    </main>
+<% } %>
+
+<%- include('partials/footer.html') %>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const optionsBtn = document.getElementById('options-menu-btn');
+    const optionsDropdown = document.getElementById('options-dropdown');
+    const blockBtn = document.getElementById('block-user-btn');
+
+    if (optionsBtn && optionsDropdown) { // Añadida verificación para evitar errores
+        optionsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            optionsDropdown.classList.toggle('active');
+        });
+    }
+
+    // Cierra el menú si se hace clic fuera de él
+    document.addEventListener('click', (e) => {
+        if (optionsDropdown && optionsBtn && !optionsDropdown.contains(e.target) && !optionsBtn.contains(e.target)) {
+            optionsDropdown.classList.remove('active');
+        }
+    });
+
+    if (blockBtn) {
+        blockBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const userId = blockBtn.dataset.userId; // Corregido para obtener el dataset del botón
+
+            if (confirm('¿Estás seguro de que quieres bloquear a este usuario? No podrás ver su perfil ni publicaciones, y dejarán de seguirse mutuamente.')) {
+                try {
+                    const response = await fetch(`/user/${userId}/block`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    const data = await response.json();
+                    if (data.success && data.redirectUrl) {
+                        window.location.href = data.redirectUrl;
+                    } else {
+                        alert(data.message || 'Hubo un error al bloquear al usuario.');
+                    }
+                } catch (error) {
+                    console.error('Error al bloquear:', error);
+                    alert('Error de conexión al intentar bloquear.');
+                }
+            }
+        });
+    }
+});
+</script>
+
+<script src="/js/main.js"></script>
+</body>
+</html>

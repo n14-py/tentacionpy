@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuración del Sitio - Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+
+<div class="d-flex">
+    <div class="sidebar">
+        <div>
+            <div class="sidebar-header">
+                AdminPY
+            </div>
+            <ul class="nav flex-column">
+    <% if (currentUser.isAdmin) { %>
+        <li class="nav-item">
+            <a href="/admin/dashboard" class="nav-link <%= path.includes('/admin/dashboard') ? 'active' : '' %>">
+                <i class="fa-solid fa-tachometer-alt fa-fw"></i> Dashboard
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="/admin/analytics" class="nav-link <%= path.includes('/admin/analytics') ? 'active' : '' %>">
+                <i class="fa-solid fa-chart-line fa-fw"></i> Analíticas
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="/admin/users" class="nav-link <%= path.includes('/admin/users') || path.includes('/admin/user') ? 'active' : '' %>">
+                <i class="fa-solid fa-users fa-fw"></i> Usuarios
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="/admin/posts" class="nav-link <%= path.includes('/admin/posts') ? 'active' : '' %>">
+                <i class="fa-solid fa-file-alt fa-fw"></i> Anuncios
+            </a>
+        </li>
+         <li class="nav-item">
+            <a href="/admin/withdrawals" class="nav-link <%= path.includes('/admin/withdrawals') ? 'active' : '' %>">
+                <i class="fa-solid fa-money-bill-wave fa-fw"></i> Retiros
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="/admin/deposits" class="nav-link <%= path.includes('/admin/deposits') ? 'active' : '' %>">
+                <i class="fa-solid fa-piggy-bank fa-fw"></i> Depósitos
+            </a>
+        </li>
+    <% } %>
+
+    <li class="nav-item">
+         <a href="/admin/moderation" class="nav-link <%= path.includes('/admin/moderation') ? 'active' : '' %>">
+            <i class="fa-solid fa-check-to-slot fa-fw"></i> Moderación
+        </a>
+    </li>
+    <li class="nav-item">
+        <a href="/admin/verifications" class="nav-link <%= path.includes('/admin/verifications') ? 'active' : '' %>">
+            <i class="fa-solid fa-id-card fa-fw"></i> Verificaciones
+        </a>
+    </li>
+    <li class="nav-item">
+        <a href="/admin/reports" class="nav-link <%= path.includes('/admin/reports') ? 'active' : '' %>">
+            <i class="fa-solid fa-flag fa-fw"></i> Reportes
+        </a>
+    </li>
+
+    <% if (currentUser.isAdmin) { %>
+        <li class="nav-item">
+            <a href="/admin/settings" class="nav-link <%= path.includes('/admin/settings') ? 'active' : '' %>">
+                <i class="fa-solid fa-cogs fa-fw"></i> Configuración
+            </a>
+        </li>
+    <% } %>
+</ul>
+        </div>
+        <div class="sidebar-footer">
+             <a href="/feed" class="nav-link">
+                <i class="fa-solid fa-arrow-left fa-fw"></i> Volver al Sitio
+            </a>
+        </div>
+    </div>
+
+    <main class="main-content">
+        <div class="container-fluid">
+            <h1 class="h3 mb-4 text-gray-800">Configuración General del Sitio</h1>
+
+            <form action="/admin/settings" method="POST">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Configuración Financiera</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="creatorEarningRate" class="form-label">Tasa de Ganancia para el Creador (%)</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="creatorEarningRate" name="creatorEarningRate" value="<%= siteConfig.creatorEarningRate * 100 %>" min="0" max="100" step="1">
+                                <span class="input-group-text">%</span>
+                            </div>
+                            <small class="form-text text-muted">Este es el porcentaje del precio de venta que recibe el creador. La plataforma se queda con el resto.</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Ajustes de Verificación</h6>
+    </div>
+    <div class="card-body">
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="verificationRequired" name="verificationRequired" <%= siteConfig.verificationRequired ? 'checked' : '' %>>
+            <label class="form-check-label" for="verificationRequired">Requerir Verificación de Identidad para Nuevos Creadores</label>
+        </div>
+        <small class="form-text text-muted">
+            Si está activado, los nuevos usuarios deberán pasar por el proceso de verificación para poder publicar. Si lo desactivas, las cuentas nuevas se crearán como "verificadas" automáticamente.
+        </small>
+    </div>
+</div>
+
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Listas y Categorías</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="categories" class="form-label">Categorías de Anuncios</label>
+                            <textarea class="form-control" id="categories" name="categories" rows="4"><%= siteConfig.categories.join(', ') %></textarea>
+                            <small class="form-text text-muted">Valores separados por comas. Estos aparecerán en los formularios de creación y búsqueda.</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="cities" class="form-label">Ciudades</label>
+                            <textarea class="form-control" id="cities" name="cities" rows="4"><%= siteConfig.cities.join(', ') %></textarea>
+                            <small class="form-text text-muted">Valores separados por comas. Estos aparecerán en los perfiles de usuario.</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow mb-4">
+                     <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">Paquetes de TPYS</h6>
+                    </div>
+                    <div class="card-body" id="packages-container">
+                        <% siteConfig.tpysPackages.forEach((pkg, index) => { %>
+                            <div class="row align-items-center mb-2 package-row">
+                                <div class="col">
+                                    <input type="number" name="packages[<%= index %>][tpys]" class="form-control" value="<%= pkg.tpys %>" placeholder="TPYS">
+                                </div>
+                                <div class="col">
+                                    <input type="number" name="packages[<%= index %>][gs]" class="form-control" value="<%= pkg.gs %>" placeholder="Guaraníes">
+                                </div>
+                                <div class="col-auto">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="packages[<%= index %>][isPopular]" <%= pkg.isPopular ? 'checked' : '' %>>
+                                        <label class="form-check-label">¿Popular?</label>
+                                    </div>
+                                </div>
+                            </div>
+                        <% }); %>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg">Guardar Toda la Configuración</button>
+            </form>
+        </div>
+    </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cancelar Suscripción - TentacionPY</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+
+<%- include('partials/header.html') %>
+
+<main class="container">
+    <div class="form-container" style="text-align: center;">
+        <h2>Cancelar Suscripción a <%= creator.username %></h2>
+        <p>Estás a punto de cancelar tu suscripción. Perderás el acceso al contenido exclusivo al final de tu ciclo de facturación actual.</p>
+        <hr>
+        
+        <div class="alert alert-info">
+            <strong>Importante:</strong> La cancelación se procesa a través de nuestro socio de pagos, Pagopar. Serás redirigido a su plataforma para completar el proceso de forma segura.
+        </div>
+        
+        <div style="margin-top: 2rem;">
+            <a href="URL_DE_CANCELACION_PAGOPAR" class="btn btn-danger">Proceder a la Cancelación Segura</a>
+            <a href="/my-subscriptions" class="btn btn-secondary" style="margin-top: 1rem;">No, volver a mis suscripciones</a>
+        </div>
+    </div>
+</main>
+
+<%- include('partials/footer.html') %>
+
+</body>
+</html>

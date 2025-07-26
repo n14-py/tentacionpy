@@ -1,0 +1,82 @@
+<%- include('partials/header.html') %>
+
+<div class="page-header">
+    <h1>Viendo Video</h1>
+    <a href="/my-videos" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver a Mis Videos</a>
+</div>
+
+<div class="anuncio-detail-container">
+    <div class="photo-gallery">
+        <div class="main-photo-container">
+            <div class="video-container" style="position: relative;">
+                 <video src="<%= post.files[0] %>" controls controlslist="nodownload" oncontextmenu="return false;" style="width: 100%; border-radius: var(--border-radius-soft);"></video>
+                 <div class="video-security-overlay"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="anuncio-info">
+        <div class="user-link-container">
+             <a href="/user/<%= post.userId._id %>" class="user-link">
+                <img src="<%= post.userId.profilePic %>" alt="<%= post.userId.username %>">
+                <h2><%= post.userId.username %></h2>
+            </a>
+        </div>
+
+        <div class="post-stats">
+            <span class="stat-item"><i class="fas fa-eye"></i> <%= post.views %> Vistas</span>
+            <span class="stat-item"><i class="fas fa-shopping-cart"></i> <%= post.salesCount %> Ventas</span>
+            <span class="stat-item"><i class="fas fa-comments"></i> <%= post.comments.length %> Comentarios</span>
+        </div>
+
+        <div class="info-section">
+            <h3>Descripción</h3>
+            <p><%= post.description %></p>
+        </div>
+        
+        <hr>
+
+        <div class="comments-section">
+            <h3>Comentarios</h3>
+            <% if (currentUser) { %>
+                <form id="comment-form" class="comment-form" data-post-id="<%= post._id %>">
+                    <img src="<%= currentUser.profilePic %>" alt="Tu perfil">
+                    <div class="comment-input-area">
+                        <textarea name="text" placeholder="Añade un comentario..." required></textarea>
+                        <div class="comment-actions">
+                            <div class="donation-area" title="Dona TPYS para que tu comentario destaque">
+                                <img src="/img/tpys-coin.png" class="coin-icon" alt="TPYS">
+                                <input type="number" name="donationAmount" placeholder="Donar TPYS" min="10" step="10">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Enviar</button>
+                        </div>
+                    </div>
+                </form>
+            <% } else { %>
+                <p><a href="/login">Inicia sesión</a> para dejar un comentario.</p>
+            <% } %>
+
+            <ul id="comment-list" class="comment-list">
+                <% post.comments.slice().reverse().forEach(comment => { %>
+                    <li class="comment-item <%= comment.donation ? 'comment-item--donated' : '' %>">
+                        <a href="/user/<%= comment.userId._id %>"><img src="<%= comment.userId.profilePic %>" alt="<%= comment.userId.username %>"></a>
+                        <div class="comment-content">
+                            <div class="comment-header">
+                                <a href="/user/<%= comment.userId._id %>" class="username"><%= comment.userId.username %></a>
+                                <span class="timestamp"><%= formatDate(comment.createdAt) %></span>
+                            </div>
+                            <p class="comment-text"><%- comment.text.replace(/\n/g, '<br>') %></p>
+                            <% if (comment.donation) { %>
+                                <div class="donation-receipt">
+                                    Donó <img src="/img/tpys-coin.png" class="coin-icon-small"> <strong><%= comment.donation.amount %> TPYS</strong>
+                                </div>
+                            <% } %>
+                        </div>
+                    </li>
+                <% }) %>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<%- include('partials/footer.html') %>

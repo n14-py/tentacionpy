@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurar Suscripciones - TentacionPY</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+
+<%- include('../partials/header.html') %>
+
+<main class="container">
+    <div class="settings-layout">
+        <aside class="settings-sidebar">
+            <nav>
+                <a href="/settings/dashboard"><i class="fas fa-tachometer-alt"></i> Panel</a>
+                <a href="/settings/profile"><i class="fas fa-user-edit"></i> Editar Perfil</a>
+                <a href="/settings/subscriptions" class="active"><i class="fas fa-star"></i> Suscripciones</a>
+                <a href="/settings/automations"><i class="fas fa-robot"></i> Mensajes Auto.</a>
+                <a href="/settings/payouts"><i class="fas fa-hand-holding-usd"></i> Retiros</a>
+                <a href="/settings/security" class="<%= (locals.path && path.endsWith('/security')) ? 'active' : '' %>"><i class="fas fa-shield-alt"></i> Seguridad</a>
+            </nav>
+        </aside>
+
+        <section class="settings-content">
+            <div class="form-container settings-form">
+                <h2>Configuración de Suscripciones</h2>
+                <p>Activa esta opción para permitir que otros usuarios paguen una tarifa mensual para acceder a tu contenido exclusivo y chatear contigo.</p>
+                <hr>
+                
+                <form action="/settings/subscriptions" method="POST">
+                    <div class="form-group-checkbox large">
+                        <% 
+                            const isChecked = locals.currentUser && locals.currentUser.subscriptionSettings && currentUser.subscriptionSettings.isActive;
+                        %>
+                        <input type="checkbox" id="isActive" name="isActive" <%= isChecked ? 'checked' : '' %>>
+                        <label for="isActive"><strong>Activar Suscripciones en mi Perfil</strong></label>
+                        <small class="form-text text-muted">Al marcar esta casilla, aparecerá un botón de "Suscribirse" en tu perfil.</small>
+                    </div>
+                    <hr>
+                    <div id="settings-if-active">
+                        <h4>Precio de la Suscripción Mensual</h4>
+                        <p>Elige cuánto costará la suscripción a tu perfil. Recibirás el 55% de este monto por cada suscriptor.</p>
+                        <div class="form-group">
+                            <label for="price">Precio (en <img src="/img/tpy-coin.png" class="tpy-coin" alt="TPYS">)</label>
+                            <select id="price" name="price" class="form-control">
+                                <% 
+                                    const prices = [300, 600, 1000, 1250];
+                                    const currentPrice = locals.currentUser && locals.currentUser.subscriptionSettings ? currentUser.subscriptionSettings.price : 300;
+                                %>
+                                <% prices.forEach(p => { %>
+                                    <option value="<%= p %>" <%= currentPrice === p ? 'selected' : '' %>>
+                                        <%= p.toLocaleString('es-PY') %> TPYS al mes
+                                    </option>
+                                <% }); %>
+                            </select>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary btn-block">Guardar Configuración</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </div>
+</main>
+
+<%- include('../partials/footer.html') %>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const isActiveCheckbox = document.getElementById('isActive');
+        const settingsDiv = document.getElementById('settings-if-active');
+        function togglePriceSettings() {
+            settingsDiv.style.display = isActiveCheckbox.checked ? 'block' : 'none';
+        }
+        isActiveCheckbox.addEventListener('change', togglePriceSettings);
+        togglePriceSettings();
+    });
+</script>
+
+</body>
+</html>

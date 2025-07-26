@@ -1,0 +1,58 @@
+<%- include('partials/header.html') %>
+
+<div class="page-header container">
+    <h1>Editar mi Perfil</h1>
+</div>
+
+<div class="form-container container">
+    <% if (locals.error) { %>
+        <div class="error-message"><%= error %></div>
+    <% } %>
+    
+    <form action="/edit-profile" method="POST" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="username">Nombre de Usuario</label>
+            <input type="text" id="username" name="username" value="<%= currentUser.username %>" required>
+        </div>
+        <div class="form-group">
+            <label for="profilePic">Foto de Perfil</label>
+            <input type="file" id="profilePic" name="profilePic" accept="image/*">
+            <small>Sube una nueva foto para actualizar la actual.</small>
+        </div>
+         <div class="form-group">
+            <label for="gender">Yo soy</label>
+            <select id="gender" name="gender" required>
+                <option value="Mujer" <%= currentUser.gender === 'Mujer' ? 'selected' : '' %>>Mujer</option>
+                <option value="Hombre" <%= currentUser.gender === 'Hombre' ? 'selected' : '' %>>Hombre</option>
+                <option value="Trans" <%= currentUser.gender === 'Trans' ? 'selected' : '' %>>Trans</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="orientation">Mi orientación es</label>
+            <select id="orientation" name="orientation" required>
+                <option value="Heterosexual" <%= currentUser.orientation === 'Heterosexual' ? 'selected' : '' %>>Heterosexual</option>
+                <option value="Homosexual" <%= currentUser.orientation === 'Homosexual' ? 'selected' : '' %>>Homosexual</option>
+                <option value="Bisexual" <%= currentUser.orientation === 'Bisexual' ? 'selected' : '' %>>Bisexual</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="location">Tu ubicación principal</label>
+            <select id="location" name="location" required>
+                <% CITIES.forEach(city => { %>
+                    <option value="<%= city %>" <%= currentUser.location === city ? 'selected' : '' %>><%= city %></option>
+                <% }) %>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="bio">Biografía</label>
+            <textarea id="bio" name="bio" rows="4"><%= currentUser.bio %></textarea>
+        </div>
+        <div class="form-group">
+            <label for="whatsapp">Número de WhatsApp (con código de país, ej: 595...)</label>
+            <input type="text" id="whatsapp" name="whatsapp" value="<%= currentUser.whatsapp %>">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%">Guardar Cambios</button>
+    </form>
+</div>
+
+<%- include('partials/footer.html') %>

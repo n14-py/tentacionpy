@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analíticas - Panel de Administrador</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+
+<div class="d-flex">
+    <div class="sidebar">
+        <div>
+            <div class="sidebar-header">
+                AdminPY
+            </div>
+            <ul class="nav flex-column">
+                <% if (currentUser.isAdmin) { %>
+                    <li class="nav-item">
+                        <a href="/admin/dashboard" class="nav-link <%= path.includes('/admin/dashboard') ? 'active' : '' %>">
+                            <i class="fa-solid fa-tachometer-alt fa-fw"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/admin/analytics" class="nav-link <%= path.includes('/admin/analytics') ? 'active' : '' %>">
+                            <i class="fa-solid fa-chart-line fa-fw"></i> Analíticas
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/admin/users" class="nav-link <%= path.includes('/admin/users') || path.includes('/admin/user') ? 'active' : '' %>">
+                            <i class="fa-solid fa-users fa-fw"></i> Usuarios
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/admin/posts" class="nav-link <%= path.includes('/admin/posts') ? 'active' : '' %>">
+                            <i class="fa-solid fa-file-alt fa-fw"></i> Anuncios
+                        </a>
+                    </li>
+                     <li class="nav-item">
+                        <a href="/admin/withdrawals" class="nav-link <%= path.includes('/admin/withdrawals') ? 'active' : '' %>">
+                            <i class="fa-solid fa-money-bill-wave fa-fw"></i> Retiros
+                        </a>
+                    </li>
+                    <li class="nav-item">
+            <a href="/admin/deposits" class="nav-link <%= path.includes('/admin/deposits') ? 'active' : '' %>">
+                <i class="fa-solid fa-piggy-bank fa-fw"></i> Depósitos
+            </a>
+        </li>
+                <% } %>
+                
+
+                <li class="nav-item">
+                     <a href="/admin/moderation" class="nav-link <%= path.includes('/admin/moderation') ? 'active' : '' %>">
+                        <i class="fa-solid fa-check-to-slot fa-fw"></i> Moderación
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/admin/verifications" class="nav-link <%= path.includes('/admin/verifications') ? 'active' : '' %>">
+                        <i class="fa-solid fa-id-card fa-fw"></i> Verificaciones
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/admin/reports" class="nav-link <%= path.includes('/admin/reports') ? 'active' : '' %>">
+                        <i class="fa-solid fa-flag fa-fw"></i> Reportes
+                    </a>
+                </li>
+
+                <% if (currentUser.isAdmin) { %>
+                    <li class="nav-item">
+                        <a href="/admin/settings" class="nav-link <%= path.includes('/admin/settings') ? 'active' : '' %>">
+                            <i class="fa-solid fa-cogs fa-fw"></i> Configuración
+                        </a>
+                    </li>
+                <% } %>
+            </ul>
+            </div>
+        <div class="sidebar-footer">
+            <a href="/feed" class="nav-link">
+                <i class="fa-solid fa-arrow-left fa-fw"></i> Volver al Sitio
+            </a>
+        </div>
+    </div>
+
+    <main class="main-content">
+        <div id="analytics-data-container" data-analytics='<%- JSON.stringify(analytics || {}) %>'></div>
+
+        <div class="container-fluid">
+            <h1 class="h3 mb-4 text-gray-800">Panel de Analíticas</h1>
+
+            <div class="row">
+                <div class="col-xl-4 col-md-6 mb-4">
+                    <div class="card border-left-primary shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Ingresos Totales (Bruto)</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800"><%= analytics.keyMetrics.totalRevenueTPYS.toLocaleString('es-PY') %> TPYS</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-4 col-md-6 mb-4">
+                    <div class="card border-left-success shadow h-100 py-2">
+                        <div class="card-body">
+                             <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Comisión Total (Plataforma)</div>
+                             <div class="h5 mb-0 font-weight-bold text-gray-800"><%= analytics.keyMetrics.totalCommissionTPYS.toLocaleString('es-PY') %> TPYS</div>
+                             <small class="text-muted">(aprox. <%= (analytics.keyMetrics.totalCommissionTPYS * TASA_CONVERSION_GS).toLocaleString('es-PY', {style:'currency', currency:'PYG'}) %>)</small>
+                        </div>
+                    </div>
+                </div>
+                 <div class="col-xl-4 col-md-6 mb-4">
+                    <div class="card border-left-info shadow h-100 py-2">
+                        <div class="card-body">
+                           <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Nuevos Usuarios (Últimos 30 días)</div>
+                           <div class="h5 mb-0 font-weight-bold text-gray-800"><%= analytics.keyMetrics.newUsersLast30Days %></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Comisiones de la Plataforma - Últimos 30 Días</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-area" style="height: 320px;">
+                        <canvas id="earningsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-6">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Top 5 Creadores por Ganancias</h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-group">
+                                <% if(analytics && analytics.topCreators && analytics.topCreators.length > 0) { %>
+                                    <% analytics.topCreators.forEach(creator => { %>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <a href="/admin/user/<%= creator._id %>"><%= creator.creatorInfo.username %></a>
+                                            <span class="badge bg-success rounded-pill"><%= creator.totalEarnings.toLocaleString('es-PY') %> TPYS</span>
+                                        </li>
+                                    <% }); %>
+                                <% } else { %>
+                                    <li class="list-group-item">No hay datos suficientes.</li>
+                                <% } %>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Distribución de Transacciones</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-pie pt-4" style="height: 280px;">
+                                <canvas id="typesChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const dataContainer = document.getElementById('analytics-data-container');
+    const analyticsData = JSON.parse(dataContainer.getAttribute('data-analytics'));
+
+    // GRÁFICO DE LÍNEAS MEJORADO
+    if (analyticsData && analyticsData.dailyPlatformEarnings) {
+        const earningsCtx = document.getElementById('earningsChart').getContext('2d');
+        new Chart(earningsCtx, {
+            type: 'line',
+            data: {
+                labels: analyticsData.dailyPlatformEarnings.map(d => d.date),
+                datasets: [{
+                    label: "Comisión (TPYS)",
+                    data: analyticsData.dailyPlatformEarnings.map(d => d.commissionTPYS),
+                    borderColor: 'rgba(78, 115, 223, 1)',
+                    backgroundColor: 'rgba(78, 115, 223, 0.05)',
+                    yAxisID: 'y-tpys',
+                    fill: true,
+                    tension: 0.3
+                }, {
+                    label: "Comisión (Gs.)",
+                    data: analyticsData.dailyPlatformEarnings.map(d => d.commissionGS),
+                    borderColor: 'rgba(28, 200, 138, 1)',
+                    yAxisID: 'y-gs',
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                responsive: true,
+                scales: {
+                    'y-tpys': { 
+                        type: 'linear', 
+                        position: 'left', 
+                        ticks: { callback: value => `${value.toLocaleString('es-PY')} TPYS` } 
+                    },
+                    'y-gs': { 
+                        type: 'linear', 
+                        position: 'right', 
+                        grid: { drawOnChartArea: false }, 
+                        ticks: { callback: value => `Gs. ${value.toLocaleString('es-PY')}` } 
+                    }
+                }
+            }
+        });
+    }
+
+    // GRÁFICO DE DONA
+    if (analyticsData && analyticsData.transactionTypes && analyticsData.transactionTypes.length > 0) {
+        const typesCtx = document.getElementById('typesChart').getContext('2d');
+        new Chart(typesCtx, {
+            type: 'doughnut',
+            data: {
+                labels: analyticsData.transactionTypes.map(t => (t._id || 'N/A').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())),
+                datasets: [{
+                    data: analyticsData.transactionTypes.map(t => t.count),
+                    backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', '#858796', '#f8f9fc', '#5a5c69'],
+                }]
+            },
+            options: { maintainAspectRatio: false, responsive: true }
+        });
+    }
+});
+</script>
+
+</body>
+</html>

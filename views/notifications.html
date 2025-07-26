@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notificaciones - TentacionPY</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+    <%- include('partials/header.html') %>
+
+    <main class="container">
+        <h2>Tus Notificaciones</h2>
+        <div class="notification-list">
+            <% if (notifications && notifications.length > 0) { %>
+                <% notifications.forEach(notif => { %>
+                    <div class="notification-item <%= !notif.isRead ? 'unread' : '' %>">
+                        
+                        <% if (notif.actorId) { %>
+                            <img src="<%= notif.actorId.profilePic %>" alt="avatar" class="avatar">
+                        <% } else { %>
+                            <img src="/img/default.png" alt="avatar" class="avatar">
+                        <% } %>
+                        <div class="notification-content">
+                            <p>
+                                <% if (notif.actorId) { %>
+                                    <strong>
+    <%= notif.actorId.username %>
+    <% if (notif.actorId.isVerified) { %>
+        <i class="fas fa-check-circle verification-badge"></i>
+    <% } %>
+</strong>
+                                <% } else { %>
+                                    <strong>TentacionPY</strong>
+                                <% } %>
+                                <%= notif.message %>
+                                
+                                <% if (notif.postId && notif.postId.files && notif.postId.files.length > 0) { %>
+                                    <a href="/anuncio/<%= notif.postId._id %>" class="notification-post-link">ver la publicación.</a>
+                                <% } %>
+                            </p>
+                            <small class="text-muted"><%= formatDate(notif.createdAt) %></small>
+                        </div>
+                        
+                        <% if (notif.postId && notif.postId.files && notif.postId.files.length > 0) { %>
+                            <a href="/anuncio/<%= notif.postId._id %>">
+                                <img src="<%= notif.postId.files[0].replace('/upload/', '/upload/w_100,h_100,c_fill/') %>" alt="post-thumbnail" class="notification-thumbnail">
+                            </a>
+                        <% } %>
+                    </div>
+                <% }); %>
+            <% } else { %>
+                <div class="no-results-card">
+                    <h3>No tienes notificaciones</h3>
+                    <p>Cuando otros usuarios interactúen contigo, aparecerán aquí.</p>
+                </div>
+            <% } %>
+        </div>
+    </main>
+
+    <%- include('partials/footer.html') %>
+</body>
+</html>

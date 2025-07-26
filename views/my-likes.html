@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Me Gusta - TentacionPY</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+
+<%- include('partials/header.html') %>
+
+<main class="container">
+    <div class="page-header">
+        <h1><i class="fas fa-heart"></i> Mis Me Gusta</h1>
+        <p>Aquí aparecen todas las publicaciones que te han gustado.</p>
+    </div>
+
+    <div class="post-grid">
+        <% if (locals.posts && posts.length > 0) { %>
+            <% posts.forEach(post => { %>
+                <% if (post) { %>
+                    <div class="post-card">
+                        <a href="/anuncio/<%= post._id %>" class="post-card-link">
+                            <img src="<%= post.files[0] %>" alt="Post" class="post-card-image">
+                            <% if (post.type === 'video') { %><div class="video-overlay"><i class="fas fa-play"></i></div><% } %>
+                        </a>
+                        <div class="post-card-info">
+                            <% if (post.userId) { %>
+                                <a href="/user/<%= post.userId.username %>" class="post-card-user">
+                                    <img src="<%= post.userId.profilePic %>" alt="<%= post.userId.username %>" class="avatar">
+                                    <span><%= post.userId.username %></span>
+                                </a>
+                            <% } %>
+                        </div>
+                    </div>
+                <% } %>
+            <% }); %>
+        <% } else { %>
+            <div class="no-results-card">
+                <h3>Todavía no te ha gustado ninguna publicación</h3>
+                <p>¡Explora el feed y muestra un poco de amor!</p>
+                <a href="/feed" class="btn btn-primary">Ir al Feed</a>
+            </div>
+        <% } %>
+    </div>
+</main>
+
+<%- include('partials/footer.html') %>
+</body>
+</html>

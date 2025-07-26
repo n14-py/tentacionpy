@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mensajes Automáticos - TentacionPY</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+
+<%# RUTA CORREGIDA con ../ para que funcione desde la subcarpeta /settings %>
+<%- include('../partials/header.html') %>
+
+<main class="container">
+    <div class="settings-layout">
+        <aside class="settings-sidebar">
+            <nav>
+                <a href="/settings/dashboard"><i class="fas fa-tachometer-alt"></i> Panel</a>
+                <a href="/settings/profile"><i class="fas fa-user-edit"></i> Editar Perfil</a>
+                <a href="/settings/subscriptions"><i class="fas fa-star"></i> Suscripciones</a>
+                <a href="/settings/automations" class="active"><i class="fas fa-robot"></i> Mensajes Auto.</a>
+                <a href="/settings/payouts"><i class="fas fa-hand-holding-usd"></i> Retiros</a>
+                <a href="/settings/security" class="<%= (locals.path && path.endsWith('/security')) ? 'active' : '' %>"><i class="fas fa-shield-alt"></i> Seguridad</a>
+            </nav>
+        </aside>
+
+        <section class="settings-content">
+            <div class="form-container settings-form">
+                <h2>Mensajes Automáticos</h2>
+                <p>Configura un mensaje de bienvenida que se enviará automáticamente a cada nuevo suscriptor. Es una excelente forma de iniciar la conversación y ofrecer contenido personalizado.</p>
+                <hr>
+                
+                <form action="/settings/automations" method="POST">
+                    
+                    <div class="form-group-checkbox large">
+                        <% 
+                            const isEnabled = locals.currentUser && currentUser.automatedMessageEnabled;
+                        %>
+                        <input type="checkbox" id="automatedMessageEnabled" name="automatedMessageEnabled" <%= isEnabled ? 'checked' : '' %>>
+                        <label for="automatedMessageEnabled"><strong>Activar mensaje de bienvenida automático</strong></label>
+                        <small class="form-text text-muted">Si está marcada, los nuevos suscriptores recibirán este mensaje al instante.</small>
+                    </div>
+
+                    <hr>
+
+                    <div id="automation-settings">
+                        <h4>Texto del Mensaje Automático</h4>
+                        <p>Puedes usar este espacio para agradecer, dar la bienvenida o informar sobre tus servicios de videos personalizados y sus precios.</p>
+
+                        <div class="form-group">
+                            <label for="automatedChatMessage">Tu mensaje:</label>
+                            <textarea id="automatedChatMessage" name="automatedChatMessage" rows="6" class="form-control" placeholder="Ej: ¡Bienvenido/a a mi perfil! Gracias por suscribirte. Hago videos personalizados desde 100 TPYS, ¡no dudes en pedir el tuyo!"><%= (locals.currentUser && currentUser.automatedChatMessage) || '' %></textarea>
+                        </div>
+                    </div>
+
+                    <hr>
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary btn-block">Guardar Configuración</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </div>
+</main>
+
+<%- include('../partials/footer.html') %>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const isEnabledCheckbox = document.getElementById('automatedMessageEnabled');
+        const settingsDiv = document.getElementById('automation-settings');
+
+        function toggleMessageSettings() {
+            if (settingsDiv) {
+               settingsDiv.style.display = isEnabledCheckbox.checked ? 'block' : 'none';
+            }
+        }
+
+        if(isEnabledCheckbox) {
+            isEnabledCheckbox.addEventListener('change', toggleMessageSettings);
+            toggleMessageSettings();
+        }
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificar Identidad - TentacionPY</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+
+<%- include('partials/header.html') %>
+
+<main class="container">
+    <div class="form-container auth-form">
+        <h2>Verificación de Identidad</h2>
+        
+        <% if (locals.status === 'pending') { %>
+            <div class="alert alert-info text-center">
+                <i class="fas fa-clock fa-2x mb-3"></i>
+                <h4>Tu solicitud está en revisión</h4>
+                <p>Hemos recibido tus documentos. Nuestro equipo los revisará en las próximas 24 horas. Te notificaremos cuando el proceso haya terminado.</p>
+            </div>
+        <% } else if (locals.status === 'rejected') { %>
+            <div class="alert alert-danger">
+                <h4>Tu verificación fue rechazada</h4>
+                <p><strong>Motivo:</strong> <%= locals.reason || 'No se especificó un motivo.' %></p>
+                <p>Por favor, revisa los requisitos y vuelve a intentarlo.</p>
+            </div>
+        <% } %>
+
+        <% if (locals.status !== 'pending') { %>
+            <p>Para poder publicar contenido, necesitamos verificar que eres mayor de edad. Este proceso es manual y se realiza una sola vez.</p>
+            <hr>
+            <form action="/verify-account" method="POST" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="idPhoto"><i class="fas fa-id-card"></i> 1. Foto de tu Cédula de Identidad (lado frontal)</label>
+                    <input type="file" id="idPhoto" name="verificationPhotos" class="form-control" required accept="image/*">
+                    <small>Asegúrate de que la foto sea clara y todos los datos sean legibles.</small>
+                </div>
+                <div class="form-group">
+                    <label for="selfiePhoto"><i class="fas fa-camera-retro"></i> 2. Selfie tuya sosteniendo tu Cédula</label>
+                    <input type="file" id="selfiePhoto" name="verificationPhotos" class="form-control" required accept="image/*">
+                    <small>Tu rostro y la cédula deben ser claramente visibles en la misma foto.</small>
+                </div>
+                <div class="alert alert-info" style="font-size: 0.9rem;">
+                    <i class="fas fa-shield-alt"></i> <strong>Tu privacidad es importante.</strong> Estos documentos se usan únicamente para la verificación de edad y se eliminarán de nuestros servidores una vez que tu cuenta sea aprobada.
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Enviar para Verificación</button>
+            </form>
+        <% } %>
+    </div>
+</main>
+
+<%- include('partials/footer.html') %>
+
+</body>
+</html>

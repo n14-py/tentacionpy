@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Chat con <%= locals.otherUser ? otherUser.username : 'Usuario' %> - TentacionPY</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body class="chat-page-body">
+
+<div class="chat-container">
+    <header class="chat-header">
+        <a href="/chat" class="back-button"><i class="fas fa-arrow-left"></i></a>
+        <% if (locals.otherUser) { %>
+            <img src="<%= otherUser.profilePic %>" alt="Avatar de <%= otherUser.username %>" class="avatar">
+            <div class="chat-title">
+                <strong><%= otherUser.username %></strong>
+            </div>
+        <% } %>
+    </header>
+
+    <main class="chat-body" id="chat-body">
+        <% if (locals.messages && messages.length > 0) { %>
+            <% messages.forEach(msg => { %>
+                <% if (msg && msg.senderId) { %>
+                    <% const isMine = msg.senderId._id.equals(currentUser._id); %>
+                    <div class="message <%= isMine ? 'sent' : 'received' %> message-item" data-message-id="<%= msg._id %>">
+                        <div class="message-content">
+                            
+                            <% if (msg.mediaUrl && msg.mediaType) { %>
+    <div class="chat-media-container">
+        <% if (msg.mediaType === 'image') { %>
+            <img src="<%= msg.mediaUrl %>" alt="Imagen del chat" class="chat-media-image clickable-media" data-url="<%= msg.mediaUrl %>" data-type="image">
+        <% } else if (msg.mediaType === 'video') { %>
+            <video src="<%= msg.mediaUrl %>" class="chat-media-video clickable-media" data-url="<%= msg.mediaUrl %>" data-type="video"></video>
+        <% } %>
+        <a href="/report?type=chat_message&id=<%= msg._id %>" class="report-media-btn" title="Reportar este archivo" target="_blank">
+            <i class="fas fa-flag"></i>
+        </a>
+    </div>
+<% } %>
+
+                            <% if (msg.text) { %><p><%= msg.text %></p><% } %>
+                            <% if (msg.tpysAmount && msg.tpysAmount > 0) { %>
+                                <div class="tip-badge">...</div>
+                            <% } %>
+                            <span class="message-time"><%= formatDate(msg.createdAt) %></span>
+                        </div>
+                    </div>
+                <% } %>
+            <% }); %>
+        <% } else { %>
+            <p class="text-center text-muted mt-4">Aún no hay mensajes.</p>
+        <% } %>
+    </main>
+
+    <footer class="chat-footer">
+        <div id="media-preview-container" class="media-preview-container"></div>
+        <form id="message-form" class="message-form" autocomplete="off" enctype="multipart/form-data">
+            <input type="file" id="media-input" name="chatMedia" accept="image/*,video/*" style="display: none;">
+            <button type="button" class="btn-icon" id="attach-file-button" title="Adjuntar archivo"><i class="fas fa-paperclip"></i></button>
+            <input type="text" id="message-input" name="text" placeholder="Escribe un mensaje...">
+            <button type="button" class="btn-icon" id="tip-button" title="Enviar Propina"><img src="/img/tpy-coin.png" class="tpy-coin" alt="TPYS"> Donar</button>
+            <button type="submit" class="btn-icon btn-send" title="Enviar Mensaje"><i class="fas fa-paper-plane"></i></button>
+        </form>
+    </footer>
+</div>
+
+<div id="media-modal" class="media-modal">
+    <span class="close-modal-btn" id="close-modal-btn">&times;</span>
+    <div class="media-modal-content" id="media-modal-content">
+        </div>
+</div>
+<script>const currentUserID = '<%= currentUser._id %>';</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // ... (tu código de JS anterior para enviar mensajes y polling sigue igual)
+    const chatBody = document.getElementById('chat-body');
+    const messageForm = document.getElementById('message-form');
+    // ... (etc.)
+
+    // --- INICIO: NUEVA LÓGICA PARA EL MODAL ---
+    const mediaModal = document.getElementById('media-modal');
+    const modalContent = document.getElementById('media-modal-content');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+
+    function openModal(type, url) {
+        if (!mediaModal || !modalContent) return;
+        
+        if (type === 'image') {
+            modalContent.innerHTML = `<img src="${url}" alt="Vista ampliada">`;
+        } else {
+            // Añadimos 'autoplay' y 'controls' para los videos
+            modalContent.innerHTML = `<video src="${url}" controls autoplay></video>`;
+        }
+        mediaModal.style.display = 'flex';
+    }
+
+    function closeModal() {
+        if (!mediaModal || !modalContent) return;
+
+        mediaModal.style.display = 'none';
+        // Vaciamos el contenido para detener la reproducción de videos en segundo plano
+        modalContent.innerHTML = '';
+    }
+
+    // Event listener delegado para abrir el modal
+    chatBody.addEventListener('click', (e) => {
+        if (e.target.classList.contains('clickable-media')) {
+            const url = e.target.dataset.url;
+            const type = e.target.dataset.type;
+            openModal(type, url);
+        }
+    });
+
+    // Event listeners para cerrar el modal
+    closeModalBtn.addEventListener('click', closeModal);
+    mediaModal.addEventListener('click', (e) => {
+        // Si se hace clic en el fondo oscuro, se cierra el modal
+        if (e.target === mediaModal) {
+            closeModal();
+        }
+    });
+    // --- FIN: NUEVA LÓGICA PARA EL MODAL ---
+
+    // ... (el resto de tu script de chat) ...
+    const messageInput = document.getElementById('message-input');
+    const attachFileButton = document.getElementById('attach-file-button');
+    const mediaInput = document.getElementById('media-input');
+    const previewContainer = document.getElementById('media-preview-container');
+    const tipButton = document.getElementById('tip-button');
+    const sendButton = document.querySelector('.btn-send');
+    const conversationId = window.location.pathname.split('/').pop();
+    let lastMessageId = document.querySelector('.message-item:last-child')?.dataset.messageId || null;
+
+    if (attachFileButton && mediaInput) {
+        attachFileButton.addEventListener('click', () => mediaInput.click());
+    }
+
+    if (mediaInput) {
+        mediaInput.addEventListener('change', () => {
+            const file = mediaInput.files[0];
+            if (!file) { clearPreview(); return; }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                let previewElement = file.type.startsWith('image/')
+                    ? `<img src="${e.target.result}" alt="Vista previa">`
+                    : `<video src="${e.target.result}" muted autoplay loop alt="Vista previa"></video>`;
+                previewContainer.innerHTML = `<div class="media-preview-content">${previewElement}<button type="button" id="remove-preview-btn">&times;</button></div>`;
+                previewContainer.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    if (previewContainer) {
+        previewContainer.addEventListener('click', (e) => {
+            if (e.target && e.target.id === 'remove-preview-btn') clearPreview();
+        });
+    }
+
+    function clearPreview() {
+        mediaInput.value = '';
+        previewContainer.innerHTML = '';
+        previewContainer.style.display = 'none';
+    }
+
+    async function sendMessage(formData) {
+        const originalIcon = sendButton.innerHTML;
+        sendButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        sendButton.disabled = true;
+        messageInput.disabled = true;
+        attachFileButton.disabled = true;
+        try {
+            const response = await fetch(`/chat/${conversationId}/messages`, { method: 'POST', body: formData });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || 'Error en el servidor.');
+            if (data.success && data.message) {
+                appendMessage(data.message);
+                messageInput.value = '';
+                clearPreview();
+            }
+        } catch (error) {
+            alert(`Error al enviar: ${error.message}`);
+        } finally {
+            sendButton.innerHTML = originalIcon;
+            sendButton.disabled = false;
+            messageInput.disabled = false;
+            attachFileButton.disabled = false;
+            messageInput.focus();
+        }
+    }
+
+    if (messageForm) {
+        messageForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const text = messageInput.value.trim();
+            const file = mediaInput.files[0];
+            if (!text && !file) return;
+            const formData = new FormData();
+            formData.append('text', text || '');
+            if (file) formData.append('chatMedia', file);
+            sendMessage(formData);
+        });
+    }
+
+    if (tipButton) {
+        tipButton.addEventListener('click', () => {
+            const amount = prompt("¿Cuántos TPYS quieres donar?", "50");
+            if (amount && !isNaN(amount) && Number(amount) > 0) {
+                if (confirm(`¿Confirmas la donación de ${amount} TPYS?`)) {
+                    const formData = new FormData();
+                    formData.append('text', `¡Te envié una propina de ${amount} TPYS!`);
+                    formData.append('tpysAmount', amount);
+                    sendMessage(formData);
+                }
+            } else if (amount !== null) {
+                alert("Por favor, ingresa un número válido.");
+            }
+        });
+    }
+
+    async function fetchNewMessages() {
+        try {
+            const response = await fetch(`/chat/${conversationId}/messages/since/${lastMessageId}`);
+            if (!response.ok) return;
+            const data = await response.json();
+            if (data.success && data.messages.length > 0) {
+                data.messages.forEach(appendMessage);
+            }
+        } catch (error) {
+            console.error('Error de polling:', error);
+        }
+    }
+    setInterval(fetchNewMessages, 4000);
+
+    function appendMessage(msg) {
+        if (!msg || !msg.senderId || document.querySelector(`[data-message-id="${msg._id}"]`)) return;
+        
+        lastMessageId = msg._id;
+        const isMine = msg.senderId._id === currentUserID;
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${isMine ? 'sent' : 'received'} message-item`;
+        messageDiv.dataset.messageId = msg._id;
+
+        const tipHTML = msg.tpysAmount > 0 ? `<div class="tip-badge"><img src="/img/tpy-coin.png" class="tpy-coin" alt="TPYS"> ${msg.tpysAmount}</div>` : '';
+        const textHTML = msg.text ? `<p>${msg.text}</p>` : '';
+        
+        let mediaHTML = '';
+        if (msg.mediaUrl && msg.mediaType) {
+            mediaHTML += '<div class="chat-media-container">';
+            if (msg.mediaType === 'image') {
+                mediaHTML += `<img src="${msg.mediaUrl}" class="chat-media-image clickable-media" data-url="${msg.mediaUrl}" data-type="image">`;
+            } else if (msg.mediaType === 'video') {
+                mediaHTML += `<video src="${msg.mediaUrl}" class="chat-media-video clickable-media" data-url="${msg.mediaUrl}" data-type="video"></video>`;
+            }
+            // BOTÓN DE REPORTE AÑADIDO
+            mediaHTML += `<a href="/report?type=chat_message&id=${msg._id}" class="report-media-btn" title="Reportar este archivo" target="_blank"><i class="fas fa-flag"></i></a>`;
+            mediaHTML += '</div>';
+        }
+
+        messageDiv.innerHTML = `
+            <div class="message-content">
+                ${mediaHTML}
+                ${textHTML}
+                ${tipHTML}
+                <span class="message-time">${new Date(msg.createdAt).toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' })}</span>
+            </div>`;
+            
+        chatBody.appendChild(messageDiv);
+        chatBody.scrollTop = chatBody.scrollHeight;
+    }
+
+    if (chatBody) {
+        chatBody.scrollTop = chatBody.scrollHeight;
+    }
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERROR - TentacionPY</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+
+
+
+<%- include('partials/header.html') %>
+
+<div class="form-container" style="text-align: center; margin-top: 4rem;">
+    <h1 style="font-size: 4rem; margin-bottom: 0; color: var(--error-color);">Oops!</h1>
+    <h2 style="color: var(--light-gray);">Ha ocurrido un error</h2>
+    
+    <% if (locals.message) { %>
+        <div class="error-message" style="background-color: #2a2a2a; color: var(--text-color); border: 1px solid var(--error-color);">
+            <p style="color: var(--text-color); margin: 0;"><%= message %></p>
+        </div>
+    <% } %>
+
+    <a href="javascript:history.back()" class="btn btn-primary" style="margin-top: 2rem;">
+        <i class="fas fa-arrow-left"></i> Volver a la página anterior
+    </a>
+</div>
+
+<%- include('partials/footer.html') %>

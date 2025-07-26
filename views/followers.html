@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> de <%= user.username %> - TentacionPY</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <%- include('partials/header.html') %>
+
+    <main class="main-container">
+        <div class="list-container">
+            <h1><%= title %> de <%= user.username %></h1>
+            
+            <% if (list && list.length > 0) { %>
+                <div class="user-list">
+                    <% list.forEach(item => { %>
+                        <div class="user-list-item">
+                            <a href="/user/<%= item.username %>" class="user-info">
+                                <img src="<%= item.profilePic %>" alt="Avatar de <%= item.username %>" class="avatar">
+                                <span><%= item.username %></span>
+                            </a>
+                            <% if (currentUser._id.toString() !== item._id.toString()) { %>
+                                <form action="/user/<%= item._id %>/follow" method="POST" class="follow-form">
+                                    <button type="submit" class="btn <%= currentUser.following.includes(item._id) ? 'btn-secondary' : 'btn-primary' %>">
+                                        <%= currentUser.following.includes(item._id) ? 'Dejar de Seguir' : 'Seguir' %>
+                                    </button>
+                                </form>
+                            <% } %>
+                        </div>
+                    <% }); %>
+                </div>
+            <% } else { %>
+                <div class="empty-state">
+                    <i class="fas fa-users"></i>
+                    <p>Esta lista está vacía.</p>
+                </div>
+            <% } %>
+        </div>
+    </main>
+
+    <%- include('partials/footer.html') %>
+</body>
+</html>

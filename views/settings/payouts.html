@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retiros - TentacionPY</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+
+<%- include('../partials/header.html') %>
+
+<main class="container">
+    <div class="settings-layout">
+        <aside class="settings-sidebar">
+            <nav>
+                <a href="/settings/dashboard"><i class="fas fa-tachometer-alt"></i> Panel</a>
+                <a href="/settings/profile"><i class="fas fa-user-edit"></i> Editar Perfil</a>
+                <a href="/settings/subscriptions"><i class="fas fa-star"></i> Suscripciones</a>
+                <a href="/settings/automations"><i class="fas fa-robot"></i> Mensajes Auto.</a>
+                <a href="/settings/payouts" class="active"><i class="fas fa-hand-holding-usd"></i> Retiros</a>
+                <a href="/settings/security" class="<%= (locals.path && path.endsWith('/security')) ? 'active' : '' %>"><i class="fas fa-shield-alt"></i> Seguridad</a>
+            </nav>
+        </aside>
+
+        <section class="settings-content">
+            <div class="payouts-page">
+                <div class="form-container settings-form">
+                    <h2>Solicitar Retiro de Fondos</h2>
+                    <p>Convierte tu saldo de TPYS a Guaraníes. La tasa de conversión es: <strong>100<img src="/img/tpy-coin.png" class="tpy-coin" alt="TPY"> = 10.000 Gs.</strong></p>
+                    <div class="alert alert-info">
+                        Tu saldo actual es: <strong><%= currentUser.tpysBalance.toLocaleString('es-PY') %><img src="/img/tpy-coin.png" class="tpy-coin" alt="TPYS"></strong> (Equivalente a <%= (currentUser.tpysBalance * 100).toLocaleString('es-PY') %> Gs.)
+                    </div>
+                    <hr>
+                    
+                    <form action="/settings/payouts" method="POST">
+                        <div class="form-group">
+                            <label for="amount">Monto a retirar (en Guaraníes)</label>
+                            <input type="number" id="amount" name="amount" class="form-control" placeholder="Monto mínimo: 30.000 Gs." required min="30000">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="method">Método de Retiro</label>
+                            <select id="method" name="method" class="form-control" required>
+                                <option value="transferencia">Transferencia Bancaria</option>
+                                <option value="giro">Giro</option>
+                            </select>
+                        </div>
+
+                        <div id="transferencia-fields">
+                            <div class="form-group">
+                                <label for="fullName">Nombre Completo (Titular de la cuenta)</label>
+                                <input type="text" id="fullName" name="fullName" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="ci">Cédula de Identidad</label>
+                                <input type="text" id="ci" name="ci" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="bankName">Nombre del Banco</label>
+                                <input type="text" id="bankName" name="bankName" class="form-control">
+                            </div>
+                             <div class="form-group">
+                                <label for="accountNumber">Número de Cuenta</label>
+                                <input type="text" id="accountNumber" name="accountNumber" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="alias">Alias (Opcional)</label>
+                                <input type="text" id="alias" name="alias" class="form-control">
+                            </div>
+                        </div>
+
+                        <div id="giro-fields" style="display: none;">
+                             <div class="form-group">
+                                <label for="giroFullName">Nombre Completo</label>
+                                <input type="text" id="giroFullName" name="giroFullName" class="form-control">
+                            </div>
+                             <div class="form-group">
+                                <label for="giroCi">Cédula de Identidad</label>
+                                <input type="text" id="giroCi" name="giroCi" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="phone">Número de Teléfono</label>
+                                <input type="text" id="phone" name="phone" class="form-control">
+                            </div>
+                        </div>
+
+                        <hr>
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary btn-block">Enviar Solicitud de Retiro</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="final-withdrawals-list">
+                    <h3>Historial de Retiros</h3>
+                    <% if (locals.withdrawals && withdrawals.length > 0) { %>
+                        <% withdrawals.forEach(w => { %>
+                            <div class="withdrawal-card">
+                                <div class="withdrawal-card-header">
+                                    <div class="withdrawal-status">
+                                        <span class="badge status-<%= w.status.toLowerCase() %>"><%= w.status %></span>
+                                    </div>
+                                    <div class="withdrawal-amount">
+                                        <%= w.amount.toLocaleString('es-PY') %> Gs.
+                                    </div>
+                                </div>
+                                <div class="withdrawal-card-body">
+                                    <div class="withdrawal-detail-row">
+                                        <span>Método:</span>
+                                        <strong><%= w.method %></strong>
+                                    </div>
+                                    <div class="withdrawal-detail-row">
+                                        <span>Fecha:</span>
+                                        <strong><%= formatDate(w.createdAt) %></strong>
+                                    </div>
+                                </div>
+                            </div>
+                        <% }); %>
+                    <% } else { %>
+                        <p class="no-transactions-placeholder">Aún no has solicitado ningún retiro.</p>
+                    <% } %>
+                </div>
+            </div>
+        </section>
+    </div>
+</main>
+
+<%- include('../partials/footer.html') %>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const methodSelect = document.getElementById('method');
+        const transferenciaFields = document.getElementById('transferencia-fields');
+        const giroFields = document.getElementById('giro-fields');
+        
+        const fullNameInput = document.getElementById('fullName');
+        const ciInput = document.getElementById('ci');
+        const bankNameInput = document.getElementById('bankName');
+        const accountNumberInput = document.getElementById('accountNumber');
+        
+        const giroFullNameInput = document.getElementById('giroFullName');
+        const giroCiInput = document.getElementById('giroCi');
+        const phoneInput = document.getElementById('phone');
+
+        function togglePayoutFields() {
+            if (methodSelect.value === 'transferencia') {
+                transferenciaFields.style.display = 'block';
+                giroFields.style.display = 'none';
+                
+                fullNameInput.required = true;
+                ciInput.required = true;
+                bankNameInput.required = true;
+                accountNumberInput.required = true;
+                
+                giroFullNameInput.required = false;
+                giroCiInput.required = false;
+                phoneInput.required = false;
+
+            } else {
+                transferenciaFields.style.display = 'none';
+                giroFields.style.display = 'block';
+                
+                fullNameInput.required = false;
+                ciInput.required = false;
+                bankNameInput.required = false;
+                accountNumberInput.required = false;
+                
+                giroFullNameInput.required = true;
+                giroCiInput.required = true;
+                phoneInput.required = true;
+            }
+        }
+        
+        if (methodSelect) {
+            methodSelect.addEventListener('change', togglePayoutFields);
+            togglePayoutFields();
+        }
+    });
+</script>
+
+</body>
+</html>

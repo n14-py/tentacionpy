@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte Enviado - TentacionPY</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .success-container {
+            background-color: var(--surface-color);
+            padding: 3rem;
+            border-radius: var(--border-radius-soft);
+            max-width: 600px;
+            margin: 4rem auto;
+            border-top: 4px solid var(--success-color);
+        }
+        .text-center {
+            text-align: center;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+    <%- include('partials/header.html') %>
+
+    <main class="container">
+        <div class="success-container text-center">
+            <i class="fas fa-check-circle fa-3x" style="color: #4CAF50; margin-bottom: 20px;"></i>
+            <h2>Reporte Enviado con Éxito</h2>
+            <p>Gracias por ayudarnos a mantener la comunidad segura. Nuestro equipo revisará tu reporte a la brevedad.</p>
+            <a href="javascript:history.go(-2)" class="btn btn-primary">Volver a la página anterior</a>
+        </div>
+    </main>
+
+    <%- include('partials/footer.html') %>
+</body>
+</html>

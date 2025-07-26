@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feed - TentacionPY</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+<%# Solo se mostrará el modal de edad si el usuario NO ha iniciado sesión %>
+<% if (!currentUser) { %>
+    <%- include('partials/age-verification.html') %>
+<% } %>
+    <%- include('partials/header.html') %>
+
+    <main class="container">
+        <main class="container">
+    <div class="feed-header">
+        <h2>Encuentra tu Tentación</h2>
+        <p>Explora anuncios, videos exclusivos y perfiles de creadores.</p>
+    </div>
+
+    <div class="search-container">
+    <form action="/feed" method="GET" class="main-search-form">
+        <div class="search-input-group">
+            <select name="search_type" class="search-type-select">
+    <option value="all" <%= (query.search_type === 'all' || !query.search_type) ? 'selected' : '' %>>Todos</option>
+    <option value="posts" <%= (query.search_type === 'posts') ? 'selected' : '' %>>Anuncios</option>
+    <option value="videos" <%= query.search_type === 'videos' ? 'selected' : '' %>>Videos</option>
+    <option value="users" <%= query.search_type === 'users' ? 'selected' : '' %>>Usuarios</option>
+</select>
+            <input type="text" name="q" class="search-input" placeholder="Buscar..." value="<%= query.q || '' %>">
+        </div>
+        <div class="search-buttons-group">
+             <button class="btn btn-primary" type="submit"><i class="fas fa-search"></i> Buscar</button>
+             <button class="btn btn-secondary" type="button" id="advanced-search-toggle" title="Búsqueda Avanzada"><i class="fas fa-sliders-h"></i></button>
+        </div>
+    </form>
+    
+    <form action="/feed" method="GET" class="advanced-search-form" id="advanced-search-form">
+        <input type="hidden" name="search_type" value="<%= query.search_type || 'posts' %>">
+        <input type="hidden" name="q" value="<%= query.q || '' %>">
+        <div class="search-grid">
+            <div class="form-group">
+                <label for="category">Categoría</label>
+                <select name="category" id="category" class="form-control">
+                    <option value="">Todas</option>
+                    <% CATEGORIES.forEach(cat => { %>
+                        <option value="<%= cat %>" <%= (query.category === cat) ? 'selected' : '' %>><%= cat %></option>
+                    <% }); %>
+                </select>
+            </div>
+
+
+            
+            <div class="form-group">
+                <label for="location">Ubicación</label>
+                <select name="location" id="location" class="form-control">
+                    <option value="">Todas</option>
+                    <% CITIES.forEach(city => { %>
+                        <option value="<%= city %>" <%= (query.location === city) ? 'selected' : '' %>><%= city %></option>
+                    <% }); %>
+                </select>
+            </div>
+        <div class="form-group">
+                <label for="gender">Género del Creador</label>
+                <select name="gender" id="gender" class="form-control">
+                    <option value="">Todos</option>
+                    <option value="Mujer" <%= (query.gender === 'Mujer') ? 'selected' : '' %>>Mujer</option>
+                    <option value="Hombre" <%= (query.gender === 'Hombre') ? 'selected' : '' %>>Hombre</option>
+                    <option value="Trans" <%= (query.gender === 'Trans') ? 'selected' : '' %>>Trans</option>
+                </select>
+            </div>
+        </div>
+
+        
+        <div class="search-actions">
+            <a href="/feed" class="btn btn-secondary btn-sm">Limpiar</a>
+            <button type="submit" class="btn btn-primary btn-sm">Aplicar Filtros</button>
+        </div>
+    </form>
+</div>
+
+        <div class="post-grid">
+            <% if (results && results.length > 0) { %>
+                <% if (resultType === 'users') { %>
+                    <% results.forEach(user => { %>
+                        <%- include('partials/user-card.html', { user: user }) %>
+                    <% }); %>
+                <% } else { %>
+                    <% results.forEach(post => { %>
+                        <%- include('partials/post-card.html', { post: post }) %>
+                    <% }); %>
+                <% } %>
+            <% } else { %>
+                <div class="no-results-card">
+                    <h3>No se encontraron resultados</h3>
+                    <p>Prueba con otros filtros de búsqueda.</p>
+                </div>
+            <% } %>
+        </div>
+
+        <% if (totalPages > 1) { %>
+            <nav class="pagination-container">
+                <ul class="pagination">
+                    <% const urlParams = new URLSearchParams(query); %>
+                    <% if (currentPage > 1) { %>
+                        <% urlParams.set('page', currentPage - 1); %>
+                        <li class="page-item"><a class="page-link" href="/feed?<%= urlParams.toString() %>">Anterior</a></li>
+                    <% } %>
+                    <% for(let i = 1; i <= totalPages; i++) { %>
+                        <% urlParams.set('page', i); %>
+                        <li class="page-item <%= i === currentPage ? 'active' : '' %>"><a class="page-link" href="/feed?<%= urlParams.toString() %>"><%= i %></a></li>
+                    <% } %>
+                    <% if (currentPage < totalPages) { %>
+                        <% urlParams.set('page', currentPage + 1); %>
+                        <li class="page-item"><a class="page-link" href="/feed?<%= urlParams.toString() %>">Siguiente</a></li>
+                    <% } %>
+                </ul>
+            </nav>
+        <% } %>
+    </main>
+
+  
+
+
+
+    
+
+
+
+<div id="share-modal" class="share-modal-overlay">
+    <div class="share-modal-content">
+        <button id="share-modal-close" class="share-modal-close-btn">&times;</button>
+        <h3>Compartir Publicación</h3>
+        <p>Copia el enlace o compártelo directamente.</p>
+        <div class="share-link-container">
+            <input type="text" id="share-link-input" readonly>
+            <button id="copy-link-btn" class="btn btn-secondary">Copiar</button>
+        </div>
+        <div class="share-social-buttons">
+            <a id="whatsapp-share-btn" href="#" target="_blank" class="btn-social whatsapp">
+                <i class="fab fa-whatsapp"></i> Compartir por WhatsApp
+            </a>
+        </div>
+    </div>
+</div>
+
+    <%- include('partials/footer.html') %>
+
+  <% if (currentUser) { %>
+        <a href="/new-post" class="fab" title="Crear Anuncio"><i class="fas fa-plus"></i></a>
+    <% } %>
+
+<script src="/js/main.js"></script>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const advancedSearchToggle = document.getElementById('advanced-search-toggle');
+        const advancedSearchForm = document.getElementById('advanced-search-form');
+        const searchTypeSelect = document.querySelector('.search-type-select');
+        
+        // Selecciona todos los filtros que NO son de género
+        const postFilters = document.querySelectorAll('.search-grid .form-group:not(#gender-filter-group)');
+        const genderFilter = document.getElementById('gender-filter-group');
+
+        // 1. Lógica para mostrar/ocultar el formulario avanzado
+        if (advancedSearchToggle && advancedSearchForm) {
+            advancedSearchToggle.addEventListener('click', () => {
+                const isVisible = advancedSearchForm.style.display === 'block';
+                advancedSearchForm.style.display = isVisible ? 'none' : 'block';
+            });
+        }
+
+        // 2. Lógica para cambiar los filtros visibles según el tipo de búsqueda
+        function toggleAdvancedFilters() {
+            if (!searchTypeSelect || !genderFilter) return; // Salir si los elementos no existen
+
+            const searchType = searchTypeSelect.value;
+            if (searchType === 'users') {
+                // Si se buscan usuarios, ocultar filtros de posts y mostrar el de género
+                postFilters.forEach(el => el.style.display = 'none');
+                genderFilter.style.display = 'block';
+            } else {
+                // Para cualquier otro caso (posts, videos), mostrar filtros de posts y ocultar el de género
+                postFilters.forEach(el => el.style.display = 'block');
+                genderFilter.style.display = 'none';
+            }
+        }
+        
+        if(searchTypeSelect) {
+            searchTypeSelect.addEventListener('change', toggleAdvancedFilters);
+            // Ejecutar una vez al cargar la página para establecer el estado inicial correcto
+            toggleAdvancedFilters(); 
+        }
+    });
+</script>
+
+
+
+<script src="/js/age-verification.js"></script>
+
+</body>
+
+</html>

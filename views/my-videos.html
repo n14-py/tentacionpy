@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Videos Comprados - TentacionPY</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+
+<%- include('partials/header.html') %>
+
+<main class="container">
+    <div class="page-header">
+        <h1><i class="fas fa-video"></i> Mis Videos Comprados</h1>
+        <p>Aquí encontrarás todos los videos que has comprado. ¡Disfrútalos cuando quieras!</p>
+    </div>
+
+    <div class="post-grid">
+        <% if (locals.videos && videos.length > 0) { %>
+            <% videos.forEach(post => { %>
+                <div class="post-card">
+                    <a href="/anuncio/<%= post._id %>" class="post-card-link">
+                        <% if (post.files && post.files.length > 0) { %>
+                           <img src="<%= post.files[0].replace('.mp4', '.jpg') %>" alt="Portada del video <%= post.description ? post.description.slice(0, 20) : '' %>" class="post-card-image">
+                        <% } else { %>
+                           <img src="/img/placeholder.png" alt="Imagen no disponible" class="post-card-image">
+                        <% } %>
+                        <div class="video-overlay"><i class="fas fa-play"></i></div>
+                    </a>
+                    <div class="post-card-info">
+                        <% if (post.userId) { %>
+                            <a href="/user/<%= post.userId.username %>" class="post-card-user">
+                                <img src="<%= post.userId.profilePic %>" alt="<%= post.userId.username %>" class="avatar">
+                                <span><%= post.userId.username %></span>
+                            </a>
+                        <% } %>
+                    </div>
+                </div>
+            <% }); %>
+        <% } else { %>
+            <div class="no-results-card">
+                <h3>Aún no has comprado ningún video</h3>
+                <p>Explora el feed para encontrar contenido increíble de tus creadores favoritos.</p>
+                <a href="/feed" class="btn btn-primary">Ir al Feed</a>
+            </div>
+        <% } %>
+    </div>
+</main>
+
+<%- include('partials/footer.html') %>
+
+</body>
+</html>

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Suscripciones - TentacionPY</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <%- include('partials/header.html') %>
+
+    <main class="main-container">
+        <div class="list-container">
+            <h1>Mis Suscripciones Activas</h1>
+            <p>Aquí están los creadores a los que te has suscrito.</p>
+            
+            <% if (subscriptions && subscriptions.length > 0) { %>
+                <div class="user-list">
+                    <% subscriptions.forEach(function(sub) { %>
+                        <%# Esta condición evita errores si el usuario suscrito fue borrado %>
+                        <% if (sub && sub.creatorId) { %>
+                            <div class="user-list-item">
+                                <a href="/user/<%= sub.creatorId.username %>" class="user-info">
+                                    <img src="<%= sub.creatorId.profilePic %>" alt="Avatar de <%= sub.creatorId.username %>" class="avatar">
+                                    <span><%= sub.creatorId.username %></span>
+                                </a>
+                                <div class="subscription-details" style="display: flex; align-items: center; gap: 0.5rem;">
+    <span>Vence: <%= new Date(sub.endDate).toLocaleDateString('es-ES') %></span>
+    <a href="/user/<%= sub.creatorId.username %>" class="btn btn-primary btn-sm">Ver Perfil</a>
+    <a href="/cancel-subscription/<%= sub.creatorId._id %>" class="btn btn-danger btn-sm">Cancelar</a>
+</div>
+                            </div>
+                        <% } %>
+                    <% }); %>
+                </div>
+            <% } else { %>
+                <div class="empty-state">
+                    <i class="fas fa-star-half-alt"></i>
+                    <p>Aún no te has suscrito a ningún creador.</p>
+                    <a href="/feed" class="btn btn-primary">Explorar creadores</a>
+                </div>
+            <% } %>
+        </div>
+    </main>
+
+    <%- include('partials/footer.html') %>
+</body>
+</html>

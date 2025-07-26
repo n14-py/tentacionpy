@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= locals.post && post.description ? post.description.slice(0, 30) : 'Anuncio' %>... - TentacionPY</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+
+<%- include('partials/header.html') %>
+
+<main class="container">
+    <% if (locals.post && post.userId) { %>
+        <div class="anuncio-container">
+            <div class="anuncio-media">
+                <% if (canView) { %>
+                    <% if (post.type === 'image') { %>
+                        <div class="image-slider-container">
+                            <% post.files.forEach((file, index) => { %>
+                                <div class="slide <%= index === 0 ? 'active' : '' %>">
+                                    <img src="<%= file %>" alt="Imagen del anuncio <%= index + 1 %>">
+                                </div>
+                            <% }); %>
+                            <% if (post.files.length > 1) { %>
+                                <a class="slider-control prev">&#10094;</a>
+                                <a class="slider-control next">&#10095;</a>
+                            <% } %>
+                        </div>
+                    <% } else { %>
+                        <video src="<%= post.files[0] %>" controls controlsList="nodownload" class="main-video"></video>
+                    <% } %>
+                <% } else { %>
+                    <%
+                       let backgroundStyleAttr = '';
+                       if (post.files && post.files.length > 0) {
+                           const blurredImageUrl = post.files[0].endsWith('.mp4') ? post.files[0].replace('.mp4', '.jpg') : post.files[0];
+                           backgroundStyleAttr = `style="background-image: url('${blurredImageUrl.replace('/upload/', '/upload/e_blur:1000/')}');"`;
+                       }
+                    %>
+                    <div class="content-lock" <%- backgroundStyleAttr %>>
+                        <div class="lock-overlay">
+                            <% if (post.isSubscriberOnly) { %>
+                                <i class="fas fa-star fa-2x"></i> <h3>Contenido para Suscriptores</h3>
+                                <p>Este contenido es solo para suscriptores de <strong><%= post.userId.username %></strong>.</p>
+                                <p>Suscríbete por <strong><%= post.userId.subscriptionSettings.price %> <img src="/img/tpy-coin.png" class="tpy-coin" alt="TPY"></strong> al mes.</p>
+                                <% if(currentUser) { %>
+                                    <button class="btn btn-primary btn-subscribe" data-creator-id="<%= post.userId._id %>" data-price="<%= post.userId.subscriptionSettings.price %>" data-creator-name="<%= post.userId.username %>">Suscribirme</button>
+                                <% } else { %>
+                                    <a href="/login" class="btn btn-primary">Suscribirme</a>
+                                <% } %>
+                            <% } else { %>
+                                <i class="fas fa-dollar-sign fa-2x"></i> <h3>Contenido de Pago</h3>
+                                <p>Compra este contenido por <strong><%= post.price %> <img src="/img/tpy-coin.png" class="tpy-coin" alt="TPY"></strong> para verlo.</p>
+                                <% if(currentUser) { %>
+                                    <button class="btn btn-primary btn-buy-video" data-post-id="<%= post._id %>" data-price="<%= post.price %>">Comprar</button>
+                                <% } else { %>
+                                    <a href="/login" class="btn btn-primary">Comprar</a>
+                                <% } %>
+                            <% } %>
+                            <% if (currentUser) { %>
+                               <a href="/add-funds" class="link-recharge">o recarga saldo aquí</a>
+                            <% } else { %>
+                                <a href="/login" class="link-recharge">Inicia sesión para comprar</a>
+                            <% } %>
+                        </div>
+                    </div>
+                <% } %>
+            </div>
+
+            <div class="anuncio-info">
+                <div class="anuncio-header">
+                    <a href="/user/<%= post.userId.username %>" class="user-info">
+                        <img src="<%= post.userId.profilePic %>" alt="Avatar de <%= post.userId.username %>" class="avatar-lg">
+                        <div>
+                            <h3 style="display: inline-flex; align-items: center; gap: 8px;">
+                                <%= post.userId.username %>
+                                <% if (post.userId.isVerified) { %>
+                                    <i class="fas fa-check-circle verification-badge" title="Cuenta Verificada"></i>
+                                <% } %>
+                            </h3>
+                            <p class="location"><i class="fas fa-map-marker-alt"></i> <%= post.userId.location %></p>
+                        </div>
+                    </a>
+                    <div class="anuncio-actions">
+    <button class="icon-btn share-btn" data-post-url="/anuncio/<%= post._id %>" title="Compartir">
+        <i class="fas fa-share-square"></i>
+    </button>
+    <% if (currentUser) { %>
+        
+        <% if (!isOwner) { %>
+            <a href="/report?type=post&id=<%= post._id %>" class="icon-btn" title="Reportar">
+                <i class="fas fa-flag"></i>
+            </a>
+        <% } %>
+
+        <button class="btn-like <%= (currentUser.likedPosts && currentUser.likedPosts.includes(post._id)) ? 'liked' : '' %>" data-post-id="<%= post._id %>">
+            <i class="fas fa-heart"></i> <span id="like-count"><%= post.likes ? post.likes.length : 0 %></span>
+        </button>
+    <% } else { %>
+        <a href="/login" class="btn-like">
+            <i class="fas fa-heart"></i> <span id="like-count"><%= post.likes ? post.likes.length : 0 %></span>
+        </a>
+    <% } %>
+</div>
+                </div>
+
+                <p class="description"><%= post.description %></p>
+
+                <% if (post.tags && post.tags.length > 0) { %>
+                    <div class="tags-container">
+                        <% post.tags.forEach(tag => { %>
+                            <span class="tag"><%= tag %></span>
+                        <% }); %>
+                    </div>
+                <% } %>
+
+                <% if (post.type === 'image') { %>
+                    <div class="details-section">
+                        <h4>Detalles del Anuncio</h4>
+                        <ul>
+                            <li><strong><i class="fas fa-tag"></i> Categoría:</strong> <%= post.category || 'No especificada' %></li>
+                            <li><strong><i class="fas fa-concierge-bell"></i> Servicios:</strong> <%= post.services ? post.services.join(', ') : 'No especificados' %></li>
+                            <li><strong><i class="fas fa-money-bill-wave"></i> Tarifa:</strong> <%= post.rate || 'No especificada' %></li>
+                            <li><strong><i class="fas fa-map-marked-alt"></i> Zona:</strong> <%= post.address || 'No especificada' %></li>
+                            <% if (post.whatsapp) { %>
+                                <li><strong><i class="fab fa-whatsapp"></i> Contacto:</strong> <a href="https://wa.me/<%= post.whatsapp.replace(/\D/g,'') %>?text=Hola!%20Vi%20tu%20anuncio%20en%20TentacionPY%20y%20quisiera%20m%C3%A1s%20informaci%C3%B3n." target="_blank"><%= post.whatsapp %></a></li>
+                            <% } %>
+                        </ul>
+                    </div>
+                <% } %>
+
+                <% if (currentUser && isOwner) { %>
+                    <div class="owner-actions">
+                        <h4>Gestionar Anuncio</h4>
+                        <% if (post.boostedUntil && new Date(post.boostedUntil) > new Date()) { %>
+                            <div class="alert alert-success">
+                                🚀 Anuncio promocionado hasta el <%= new Date(post.boostedUntil).toLocaleString('es-PY') %>.
+                            </div>
+                        <% } else { %>
+                            <button class="btn btn-primary btn-block" id="boost-post-btn">🚀 Promocionar Anuncio</button>
+                        <% } %>
+                        <hr>
+                        <a href="/post/<%= post._id %>/edit" class="btn btn-secondary btn-block">✏️ Editar Anuncio</a>
+                        <button class="btn btn-danger btn-block btn-delete-post" data-post-id="<%= post._id %>">🗑️ Eliminar Anuncio</button>
+                    </div>
+                <% } %>
+
+                <div class="comments-section">
+    <h4>Comentarios (<span id="comment-count"><%= post.comments ? post.comments.length : 0 %></span>)</h4>
+    
+    <% if (currentUser) { %>
+        <form id="comment-form" data-post-id="<%= post._id %>">
+            <textarea name="text" placeholder="Escribe un comentario..." required></textarea>
+            <div class="comment-actions">
+                <div class="donation-input">
+                    <label for="donationAmount">Donar:</label>
+                    <input type="number" name="donationAmount" min="0" placeholder="0">
+                    <img src="/img/tpy-coin.png" class="tpy-coin" alt="TPYS">
+                </div>
+                <button type="submit" class="btn btn-primary">Comentar</button>
+            </div>
+        </form>
+    <% } else { %>
+        <div class="alert alert-info" style="text-align:center;">
+            <p style="margin:0;"><a href="/login"><b>Inicia sesión</b></a> o <a href="/register"><b>regístrate</b></a> para dejar un comentario.</p>
+        </div>
+    <% } %>
+
+    <div id="comments-list">
+        <% if (locals.post && post.comments && post.comments.length > 0) { %>
+            <% const commentsByParent = post.comments.reduce((acc, comment) => {
+                const parentId = comment.parentCommentId || 'root';
+                if (!acc[parentId]) acc[parentId] = [];
+                acc[parentId].push(comment);
+                return acc;
+            }, {}); %>
+
+            <% const topLevelComments = (commentsByParent['root'] || []).slice().reverse(); %>
+
+            <% topLevelComments.forEach((comment, index) => { %>
+                <% if (comment.userId) { %>
+                    <div class="comment-thread <%= index >= 3 ? 'hidden' : '' %>">
+                        <div class="comment" data-comment-id="<%= comment._id %>" data-username="<%= comment.userId.username %>">
+                            <img src="<%= comment.userId.profilePic %>" alt="avatar" class="avatar">
+                            <div class="comment-body">
+                                <div class="comment-header">
+                                    <strong><%= comment.userId.username %></strong>
+                                    <small class="text-muted"><%= formatDate(comment.createdAt) %></small>
+                                </div>
+                                <p><%- comment.text.replace(/@(\w+)/g, '<strong>@$1</strong>') %></p>
+                                <% if(comment.donation && comment.donation.amount > 0) { %>
+                                    <span class="donation-badge">Donó <%= comment.donation.amount %><img src="/img/tpy-coin.png" class="tpy-coin" alt="TPYS"></span>
+                                <% } %>
+                                <div class="comment-footer">
+                                    <a href="#" class="reply-btn">Responder</a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <% if (commentsByParent[comment._id.toString()]) { %>
+                            <div class="comment-replies">
+                                <% commentsByParent[comment._id.toString()].forEach(reply => { %>
+                                    <% if (reply.userId) { %>
+                                        <div class="comment" data-comment-id="<%= reply._id %>" data-username="<%= reply.userId.username %>">
+                                            <img src="<%= reply.userId.profilePic %>" alt="avatar" class="avatar">
+                                            <div class="comment-body">
+                                                <div class="comment-header">
+                                                    <strong><%= reply.userId.username %></strong>
+                                                    <small class="text-muted"><%= formatDate(reply.createdAt) %></small>
+                                                </div>
+                                                <p><%- reply.text.replace(/@(\w+)/g, '<strong>@$1</strong>') %></p>
+                                                <div class="comment-footer">
+                                                    <a href="#" class="reply-btn">Responder</a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <% } %>
+                                <% }); %>
+                            </div>
+                        <% } %>
+                    </div>
+                <% } %>
+            <% }); %>
+
+            <% if (topLevelComments.length > 3) { %>
+                <button class="btn btn-secondary btn-block" id="show-more-comments" style="margin-top: 1rem;">
+                    Mostrar todos los comentarios (<%= topLevelComments.length %>)
+                </button>
+            <% } %>
+        <% } %>
+    </div>
+</div>
+                </div>
+            </div>
+        </div>
+
+        <% if (locals.recommendedPosts && recommendedPosts.length > 0) { %>
+            <div class="recommended-section">
+                <hr>
+                <h2>Recomendados para ti</h2>
+                <div class="post-grid">
+                    <% recommendedPosts.forEach(recPost => { %>
+                        <%- include('partials/post-card.html', { post: recPost }) %>
+                    <% }); %>
+                </div>
+            </div>
+        <% } %>
+    <% } else { %>
+        <div class="error-container">
+            <h2>Anuncio no encontrado</h2>
+            <p>El anuncio que buscas no existe o ha sido eliminado.</p>
+            <a href="/feed" class="btn btn-primary">Volver al inicio</a>
+        </div>
+    <% } %>
+</main>
+
+
+
+<div id="fullscreen-modal" class="fullscreen-modal">
+    <span class="close-fullscreen">&times;</span>
+    <img class="fullscreen-content" id="fullscreen-image">
+</div>
+<%- include('partials/footer.html') %>
+
+
+
+</body>
+</html>
