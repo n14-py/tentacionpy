@@ -14,13 +14,23 @@
 <main class="container">
     <div class="form-container">
         
-        <div class.alert alert-info" style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; background-color: rgba(33, 150, 243, 0.1); padding: 1rem; border-radius: 8px;">
-            <i class="fas fa-lightbulb fa-2x" style="color: var(--info-color);"></i>
-            <div>
-                <strong>¿Quieres tener más éxito?</strong>
-                <p class="mb-0">Hemos preparado una guía completa con los mejores consejos para optimizar tu perfil, crear contenido y ganar más. <a href="/creator-tips" style="font-weight: bold;">¡Léela aquí!</a></p>
+        <%# --- INICIO: NUEVO BLOQUE PARA INCENTIVAR A COMPLETAR EL PERFIL --- %>
+        <% if (!currentUser.bio || !currentUser.whatsapp) { %>
+            <div class="profile-notice-box">
+                <div class="notice-icon">
+                    <i class="fas fa-rocket"></i>
+                </div>
+                <div class="notice-text">
+                    <h4>¡Potencia tu Perfil para Vender Más!</h4>
+                    <p>Hemos notado que tu perfil no está completo. Añadir una biografía detallada y tu ubicación ayuda a que más fans confíen en ti y te encuentren. ¡Tómate un minuto para mejorarlo!</p>
+                    <div class="notice-actions">
+                        <a href="/settings/profile" class="btn btn-primary btn-sm">Editar mi Perfil</a>
+                        <a href="/creator-tips" class="btn btn-secondary btn-sm">Leer Guía para Creadores</a>
+                    </div>
+                </div>
             </div>
-        </div>
+        <% } %>
+        <%# --- FIN: NUEVO BLOQUE --- %>
 
         <h2>Crear Nueva Publicación</h2>
         <p>Elige qué tipo de contenido quieres publicar para empezar.</p>
@@ -28,7 +38,7 @@
         <div id="post-type-selection" class="post-type-selector">
             <div class="post-type-option" data-type="escort">
                 <i class="fas fa-image fa-3x"></i>
-                <h3>Anuncio de Escort</h3>
+                <h3>Anuncio de Acompañante</h3>
                 <p>Promociona tus servicios con fotos y detalles de contacto.</p>
             </div>
             <div class="post-type-option" data-type="video_sale">
@@ -52,32 +62,54 @@
             <hr>
 
             <div class="form-group">
-                <label for="files"><strong>Paso 2:</strong> Sube tus archivos (hasta 10, el primero será la portada)</label>
+                <label for="files"><strong>Paso 1:</strong> Sube tus archivos (hasta 10, el primero será la portada)</label>
                 <input type="file" id="files" name="files" class="form-control" multiple required accept="image/jpeg, image/png, image/jpg, video/mp4">
             </div>
 
             <div class="form-group">
-                <label for="description"><strong>Paso 3:</strong> Escribe una descripción atractiva</label>
+                <label for="description"><strong>Paso 2:</strong> Escribe una descripción atractiva</label>
                 <textarea id="description" name="description" rows="4" class="form-control" required placeholder="Describe tu contenido, qué ofreces, etc."></textarea>
             </div>
             
             <div id="escort-fields" class="form-section">
                 <div class="form-group">
-                    <label for="whatsapp">Tu WhatsApp (Opcional)</label>
-                    <input type="text" id="whatsapp" name="whatsapp" class="form-control" placeholder="Tu número de contacto para agendar">
+                    <label for="category">Categoría</label>
+                    <select id="category" name="category" class="form-control" required>
+                        <% CATEGORIES.forEach(cat => { %>
+                            <option value="<%= cat %>"><%= cat %></option>
+                        <% }); %>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="address">Tu Zona o Ubicación</label>
+                    <input type="text" id="address" name="address" class="form-control" placeholder="Ej: Centro de Asunción" required>
+                </div>
+                 <div class="form-group">
+                    <label for="services">Servicios (separados por coma)</label>
+                    <input type="text" id="services" name="services" class="form-control" placeholder="Ej: Show, Masajes, Besos" required>
                 </div>
                 <div class="form-group">
                     <label for="rate">Tarifa de referencia</label>
-                    <input type="text" id="rate" name="rate" class="form-control" placeholder="Ej: 500.000 Gs por hora">
+                    <input type="text" id="rate" name="rate" class="form-control" placeholder="Ej: Desde 500.000 Gs." required>
+                </div>
+                <div class="form-group">
+                    <label for="whatsapp">Tu WhatsApp (Opcional)</label>
+                    <input type="text" id="whatsapp" name="whatsapp" class="form-control" placeholder="+595...">
+                    <small class="form-text text-muted" style="color: var(--text-muted-color);">Importante: Incluye el código de país (+595) para que el enlace funcione correctamente.</small>
                 </div>
             </div>
 
+            <%# --- INICIO DE SECCIÓN MEJORADA PARA VIDEOS CON PROYECCIÓN --- %>
             <div id="video-sale-fields" class="form-section">
                 <div class="form-group">
                     <label for="price">Precio de venta del video (en <img src="/img/tpy-coin.png" class="tpy-coin" alt="TPYS">TPYS)</label>
-                    <input type="number" id="price" name="price" class="form-control" min="1" placeholder="Ej: 250">
+                    <input type="number" id="price" name="price" class="form-control" min="1" placeholder="Ej: 100">
+                    <div id="earnings-preview" class="earnings-preview-box">
+                        <%# El contenido se genera con JavaScript %>
+                    </div>
                 </div>
             </div>
+            <%# --- FIN DE SECCIÓN MEJORADA --- %>
             
             <hr>
             <div class="form-group">
@@ -91,66 +123,79 @@
 <%- include('partials/footer.html') %>
 
 <style>
-    .post-type-selector {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1.5rem;
-        margin-top: 2rem;
-    }
-    .post-type-option {
-        background-color: var(--surface-light-color);
-        padding: 2rem;
-        border-radius: var(--border-radius-soft);
-        text-align: center;
-        border: 2px solid var(--border-color);
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-    .post-type-option:hover {
-        transform: translateY(-5px);
-        border-color: var(--primary-color);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-    }
+    .post-type-selector { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
+    .post-type-option { background-color: var(--surface-light-color); padding: 2rem; border-radius: var(--border-radius-soft); text-align: center; border: 2px solid var(--border-color); cursor: pointer; transition: all 0.2s ease; }
+    .post-type-option:hover { transform: translateY(-5px); border-color: var(--primary-color); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
     .post-type-option i { color: var(--primary-color); margin-bottom: 1rem; }
     .post-type-option h3 { color: var(--text-color); }
     .post-type-option p { color: var(--text-muted-color); font-size: 0.9rem; }
     .form-section { display: none; }
+    
+    /* --- Estilos para los nuevos bloques --- */
+    .profile-notice-box {
+        display: flex;
+        gap: 1.5rem;
+        background-color: rgba(33, 150, 243, 0.1);
+        border-left: 4px solid var(--info-color);
+        padding: 1.5rem;
+        border-radius: var(--border-radius-soft);
+        margin-bottom: 2.5rem;
+        align-items: center;
+    }
+    .profile-notice-box .notice-icon { font-size: 2.5rem; color: var(--info-color); }
+    .profile-notice-box .notice-text h4 { margin: 0 0 0.5rem 0; color: var(--text-color); }
+    .profile-notice-box .notice-text p { margin: 0 0 1rem 0; color: var(--text-muted-color); }
+    .profile-notice-box .notice-actions { display: flex; gap: 1rem; }
+
+    .earnings-preview-box {
+        background-color: var(--surface-light-color);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-soft);
+        margin-top: 0.75rem;
+        padding: 1rem;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+    .earnings-preview-box .earning-line { color: var(--success-color); font-weight: bold; }
+    .earnings-preview-box .projection-line { color: var(--primary-color); font-size: 1.1rem; margin-top: 0.5rem; font-weight: bold;}
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+    // ... (El código anterior para seleccionar tipo de post se mantiene igual) ...
     const typeSelectionDiv = document.getElementById('post-type-selection');
     const mainForm = document.getElementById('main-post-form');
     const formTitle = document.getElementById('form-title');
     const changeTypeBtn = document.getElementById('change-type-btn');
-    
     const postTypeInput = document.getElementById('post-type-input');
     const subscriberOnlyInput = document.getElementById('subscriber-only-input');
     const filesInput = document.getElementById('files');
-
     const escortFields = document.getElementById('escort-fields');
     const videoSaleFields = document.getElementById('video-sale-fields');
+    const categoryInput = document.getElementById('category');
+    const addressInput = document.getElementById('address');
+    const servicesInput = document.getElementById('services');
+    const rateInput = document.getElementById('rate');
     const priceInput = document.getElementById('price');
+    const earningsPreview = document.getElementById('earnings-preview');
+    const CREATOR_EARNING_RATE = parseFloat('<%= siteConfig.creatorEarningRate %>');
 
     typeSelectionDiv.addEventListener('click', (e) => {
         const selection = e.target.closest('.post-type-option');
         if (!selection) return;
-
         const type = selection.dataset.type;
         typeSelectionDiv.style.display = 'none';
         mainForm.style.display = 'block';
-
-        // Ocultar todas las secciones específicas
         escortFields.style.display = 'none';
         videoSaleFields.style.display = 'none';
-        priceInput.required = false;
-
+        [categoryInput, addressInput, servicesInput, rateInput, priceInput].forEach(input => input.required = false);
         if (type === 'escort') {
-            formTitle.innerText = 'Creando Anuncio de Escort';
+            formTitle.innerText = 'Creando Anuncio de Acompañante';
             postTypeInput.value = 'image';
             subscriberOnlyInput.value = 'false';
             filesInput.accept = 'image/*';
             escortFields.style.display = 'block';
+            [categoryInput, addressInput, servicesInput, rateInput].forEach(input => input.required = true);
         } else if (type === 'video_sale') {
             formTitle.innerText = 'Creando Video de Venta';
             postTypeInput.value = 'video';
@@ -161,7 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (type === 'subscriber_video') {
             formTitle.innerText = 'Creando Video para Suscriptores';
             postTypeInput.value = 'video';
-            subscriberOnlyInput.value = 'true'; // Clave para marcarlo como exclusivo
+            subscriberOnlyInput.value = 'true';
             filesInput.accept = 'video/*';
         }
     });
@@ -169,8 +214,37 @@ document.addEventListener('DOMContentLoaded', () => {
     changeTypeBtn.addEventListener('click', () => {
         mainForm.style.display = 'none';
         typeSelectionDiv.style.display = 'grid';
-        mainForm.reset(); // Limpia el formulario
+        mainForm.reset();
     });
+
+    // --- INICIO: LÓGICA MEJORADA PARA EL CALCULADOR DE GANANCIAS ---
+    if (priceInput && earningsPreview) {
+        priceInput.addEventListener('input', () => {
+            const price = parseFloat(priceInput.value);
+            if (price && price > 0 && CREATOR_EARNING_RATE) {
+                const netEarningTPYS = price * CREATOR_EARNING_RATE;
+                const netEarningGS = netEarningTPYS * 100; // Tasa: 1 TPYS = 100 Gs.
+                const projection1000sales = netEarningGS * 1000;
+
+                // Formateamos los números para que se vean bien
+                const formattedGs = netEarningGS.toLocaleString('es-PY');
+                const formattedProjection = projection1000sales.toLocaleString('es-PY');
+
+                // Creamos el HTML que se mostrará
+                earningsPreview.innerHTML = `
+                    <div class="earning-line">
+                        <i class="fas fa-money-bill-wave"></i> Recibirás aprox. <strong>${formattedGs} Gs.</strong> por cada venta.
+                    </div>
+                    <div class="projection-line">
+                        <i class="fas fa-chart-line"></i> ¡Si vendes 1.000, ganarías <strong>${formattedProjection} Gs.!</strong>
+                    </div>
+                `;
+            } else {
+                earningsPreview.innerHTML = '';
+            }
+        });
+    }
+    // --- FIN: LÓGICA MEJORADA ---
 });
 </script>
 

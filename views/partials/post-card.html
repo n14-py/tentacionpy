@@ -1,13 +1,12 @@
-<%# Esta condición comprueba si el autor del post existe. Si no, no muestra nada. %>
+<%# Este archivo es la plantilla para UNA SOLA tarjeta de publicación %>
 <% if (post && post.userId) { %>
 
     <%
     let cardClasses = 'post-card';
     let cardStyle = '';
     if (post.boostedUntil && new Date(post.boostedUntil) > new Date() && post.boostOptions) {
-        cardClasses += ' boosted'; // Añade una clase para el borde
+        cardClasses += ' boosted';
         const boostColor = post.boostOptions.color || 'var(--primary-color)';
-        // Define la variable de CSS que se usará en la hoja de estilos interna
         cardStyle = `style="--boost-color: ${boostColor}"`;
     }
     %>
@@ -21,45 +20,33 @@
         <% } %>
 
         <a href="/anuncio/<%= post._id %>" class="post-card-link">
-    <% if (post.files && post.files.length > 0) { %>
-        <%
-            let thumbnailUrl = post.files[0];
-            if (post.type === 'video') {
-                // 1. Convertimos la URL del video a una URL de imagen (.jpg)
-                thumbnailUrl = thumbnailUrl.replace(/\.(mp4|mov|avi)$/i, '.jpg');
+            <% if (post.files && post.files.length > 0) { %>
+                <%
+                    let thumbnailUrl = post.files[0];
+                    if (post.type === 'video') {
+                        thumbnailUrl = thumbnailUrl.replace(/\.(mp4|mov|avi)$/i, '.jpg');
+                        const isPaid = post.price > 0 && !post.isSubscriberOnly;
+                        const isSubscriber = post.isSubscriberOnly;
 
-                const isPaid = post.price > 0 && !post.isSubscriberOnly;
-                const isSubscriber = post.isSubscriberOnly;
-
-                // 2. Si el video es de pago o para suscriptores, aplicamos las transformaciones
-                if (isPaid || isSubscriber) {
-                    let transformations = 'e_blur:1200'; // Nivel de desenfoque
-
-                    // 3. Añadimos el ícono correspondiente como una capa de texto
-                    if (isPaid) {
-                        // Superpone un ícono de dólar
-                        transformations += '/l_text:Arial_150_bold:$,co_rgb:FFFFFF,o_80/fl_layer_apply,g_center';
-                    } else if (isSubscriber) {
-                        // Superpone un ícono de estrella (usando un carácter unicode)
-                        transformations += '/l_text:Arial_150_bold:⭐,co_rgb:FFFFFF,o_80/fl_layer_apply,g_center';
+                        if (isPaid || isSubscriber) {
+                            let transformations = 'e_blur:1200';
+                            if (isPaid) {
+                                transformations += '/l_text:Arial_150_bold:$,co_rgb:FFFFFF,o_80/fl_layer_apply,g_center';
+                            } else if (isSubscriber) {
+                                transformations += '/l_text:Arial_150_bold:⭐,co_rgb:FFFFFF,o_80/fl_layer_apply,g_center';
+                            }
+                            const urlParts = thumbnailUrl.split('/upload/');
+                            if (urlParts.length === 2) {
+                                thumbnailUrl = urlParts[0] + '/upload/' + transformations + '/' + urlParts[1];
+                            }
+                        }
                     }
-                    
-                    // 4. Insertamos las transformaciones en la URL de la imagen
-                    const urlParts = thumbnailUrl.split('/upload/');
-                    if (urlParts.length === 2) {
-                        thumbnailUrl = urlParts[0] + '/upload/' + transformations + '/' + urlParts[1];
-                    }
-                }
-            }
-        %>
-        <img src="<%= thumbnailUrl %>" alt="Anuncio de <%= post.userId.username %>" class="post-card-image">
-    <% } %>
+                %>
+                <img src="<%= thumbnailUrl %>" alt="Anuncio de <%= post.userId.username %>" class="post-card-image">
+            <% } %>
 
-    <% if(post.type === 'video') { %>
-
-                <div class="video-overlay">
-                    <i class="fas fa-play"></i>
-                </div>
+            <% if(post.type === 'video') { %>
+                <div class="video-overlay"><i class="fas fa-play"></i></div>
                 <% if (post.price > 0) { %>
                     <div class="content-lock-icon" title="Video de pago"><i class="fas fa-dollar-sign"></i></div>
                 <% } else if (post.isSubscriberOnly) { %>
@@ -70,25 +57,25 @@
             <% } %>
         </a>
 
+        <%# --- INICIO DE LA SECCIÓN CORREGIDA --- %>
         <div class="post-card-info">
             <a href="/user/<%= post.userId.username %>" class="post-card-user">
                 <img src="<%= post.userId.profilePic %>" alt="Avatar de <%= post.userId.username %>" class="avatar">
                 <span style="display: inline-flex; align-items: center; gap: 6px;">
-    <%= post.userId.username %>
-    <% if (post.userId.isVerified) { %>
-        <i class="fas fa-check-circle verification-badge" title="Cuenta Verificada"></i>
-    <% } %>
-</span>
+                    <%= post.userId.username %>
+                    <% if (post.userId.isVerified) { %>
+                        <i class="fas fa-check-circle verification-badge" title="Cuenta Verificada"></i>
+                    <% } %>
+                </span>
             </a>
-            <div class="post-card-actions">
-    <button class="icon-btn share-btn" data-post-url="/anuncio/<%= post._id %>" title="Compartir">
-        <i class="fas fa-share-square"></i>
-    </button>
-    <a href="/report?type=post&id=<%= post._id %>" class="icon-btn" title="Reportar">
-        <i class="fas fa-flag"></i>
-    </a>
-</div>
-             </div>
+            
+            <%# ¡AQUÍ SE AÑADEN LAS ESTADÍSTICAS! %>
+            <div class="post-card-stats">
+                <span><i class="fas fa-heart"></i> <%= post.likes ? post.likes.length : 0 %></span>
+                <span><i class="fas fa-eye"></i> <%= post.views || 0 %></span>
+            </div>
+        </div>
+        <%# --- FIN DE LA SECCIÓN CORREGIDA --- %>
     </div>
 
 <% } %>

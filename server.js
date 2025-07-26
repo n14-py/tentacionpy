@@ -59,17 +59,19 @@ const getPublicId = (url) => {
 
 // ... (código anterior)
 
+// En tu archivo server.js, busca esta sección y reemplázala
+
 const storage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: (req, file) => {
-        // 1. Creamos el texto dinámico para la marca de agua
+        // 1. Creamos el texto dinámico para la marca de agua (esto se queda igual)
         const watermarkText = `${req.user.username} en TentacionPY.com`;
 
-        // 2. Definimos la transformación para FOTOS (más pequeña y discreta)
+        // 2. Definimos la transformación para FOTOS (se queda igual)
         const imageTransformation = [{
             overlay: {
                 font_family: "Arial",
-                font_size: 45,       // ¡CAMBIO! Mucho más pequeño
+                font_size: 45,
                 font_weight: "bold",
                 text: watermarkText
             },
@@ -79,22 +81,28 @@ const storage = new CloudinaryStorage({
             y: 25
         }];
 
-        // 3. Definimos la transformación para VIDEOS (un poco más grande)
-        const videoTransformation = [{
-            overlay: {
-                font_family: "Arial",
-                font_size: 40,       // ¡CAMBIO! Un poquito más grande
-                font_weight: "normal",
-                text: watermarkText
-            },
-            color: "#FFFFFF",
-            opacity: 60,
-            gravity: "south_east",
-            x: 20,
-            y: 20
-        }];
+        // 3. ¡AQUÍ ESTÁ EL CAMBIO! Definimos la nueva transformación para VIDEOS
+        const videoTransformation = [
+            // PASO 1: Si el video es más ancho que 1920px (1080p), lo reduce. Si no, ignora este paso.
+            { if: "w_gt_1920", width: 1920, crop: "scale" },
+            
+            // PASO 2: Aplica la marca de agua (esto se queda igual)
+            {
+                overlay: {
+                    font_family: "Arial",
+                    font_size: 40,
+                    font_weight: "normal",
+                    text: watermarkText
+                },
+                color: "#FFFFFF",
+                opacity: 60,
+                gravity: "south_east",
+                x: 20,
+                y: 20
+            }
+        ];
 
-        // 4. Devolvemos la configuración completa
+        // 4. Devolvemos la configuración completa (esto se queda igual)
         return {
             folder: 'tentacionpy_final',
             resource_type: 'auto',
@@ -138,7 +146,7 @@ const userSchema = new mongoose.Schema({
     password: { type: String }, googleId: { type: String },
     gender: { type: String, enum: ['Mujer', 'Hombre', 'Trans'] }, orientation: { type: String, enum: ['Heterosexual', 'Homosexual', 'Bisexual'] },
     location: { type: String, enum: CITIES }, bio: String, whatsapp: String, profilePic: { type: String, default: 'https://res.cloudinary.com/dmedd6w1q/image/upload/v1752519015/Gemini_Generated_Image_jafmcpjafmcpjafm_i5ptpl.png' },
-    tpysBalance: { type: Number, default: 100 },
+    tpysBalance: { type: Number, default: 0 },
     isVerified: { type: Boolean, default: false },
     isBanned: { type: Boolean, default: false },
     purchasedVideos: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post' }],
@@ -892,16 +900,20 @@ app.post('/reset-password', async (req, res, next) => {
 // =============================================================
 // FUNCIÓN AUTOMÁTICA PARA ELIMINAR DOCUMENTOS DE VERIFICACIÓN ANTIGUOS
 // =============================================================
+// =============================================================
+// FUNCIÓN AUTOMÁTICA PARA ELIMINAR DOCUMENTOS DE VERIFICACIÓN ANTIGUOS
+// =============================================================
 const deleteOldVerifications = async () => {
     console.log('🧹 Ejecutando tarea de limpieza de verificaciones antiguas...');
-    const ninetyDaysAgo = new Date();
-    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+    // CAMBIO: Se ajusta el tiempo de retención a 30 días
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     try {
-        // Busca verificaciones aprobadas o rechazadas que tengan más de 90 días
+        // Busca verificaciones aprobadas o rechazadas que tengan más de 30 días
         const oldVerifications = await Verification.find({
             status: { $in: ['approved', 'rejected'] },
-            createdAt: { $lt: ninetyDaysAgo }
+            createdAt: { $lt: thirtyDaysAgo }
         });
 
         if (oldVerifications.length === 0) {
@@ -931,6 +943,12 @@ const deleteOldVerifications = async () => {
         console.error('❌ Error durante la limpieza de verificaciones antiguas:', err);
     }
 };
+
+// Ejecuta la tarea una vez al iniciar el servidor
+deleteOldVerifications();
+
+// Y luego, la ejecuta cada 24 horas
+setInterval(deleteOldVerifications, 24 * 60 * 60 * 1000);
 
 // Ejecuta la tarea una vez al iniciar el servidor
 deleteOldVerifications();
@@ -1101,6 +1119,7 @@ app.get('/auth/google/callback', passport.authenticate('google', { failureRedire
 
 app.get('/profile', requireAuth, (req, res) => res.redirect(`/user/${req.user.username}`));
 
+// Reemplaza la función app.get('/user/:username', ...) con esta versión corregida
 app.get('/user/:username', async (req, res, next) => {
     try {
         const userProfile = await User.findOne({ username: req.params.username.toLowerCase() });
@@ -1123,7 +1142,11 @@ app.get('/user/:username', async (req, res, next) => {
             delete postQuery.status; // El dueño ve todos sus posts
         }
 
-        const posts = await Post.find(postQuery).sort({ createdAt: -1 });
+        // --- ¡LA CORRECIÓN ESTÁ AQUÍ! ---
+        // Añadimos .populate('userId') para cargar la info del autor en cada post
+        const posts = await Post.find(postQuery).populate('userId').sort({ createdAt: -1 });
+        // --- FIN DE LA CORRECIÓN ---
+
         let isSubscribed = false;
         if (req.user) {
             isSubscribed = !!req.user.subscriptions.find(s => s.creatorId.equals(userProfile._id) && new Date(s.endDate) > new Date());
@@ -1168,18 +1191,44 @@ app.get('/new-post', requireAuth, requireVerification, (req, res) => res.render(
 app.post('/new-post', requireAuth, requireVerification, upload.array('files', 10), async (req, res, next) => {
     try {
         const { type, description, price, services, rate, address, whatsapp, category, tags, isSubscriberOnly } = req.body;
-        if (!req.files || req.files.length === 0) throw new Error("Debes subir al menos un archivo.");
+        
+        if (!req.files || req.files.length === 0) {
+            throw new Error("Debes subir al menos un archivo.");
+        }
+
+        // --- INICIO DE LA VALIDACIÓN AÑADIDA ---
+        if (type === 'image') {
+            // Si es un anuncio, nos aseguramos de que los campos obligatorios no estén vacíos
+            if (!rate || !address || !services || !category) {
+                throw new Error('Para los anuncios, la categoría, zona, servicios y tarifa son obligatorios.');
+            }
+        }
+        if (type === 'video' && !(isSubscriberOnly === 'on') && (!price || parseFloat(price) <= 0)) {
+            // Si es un video de venta directa, debe tener un precio
+            throw new Error('Para un video de venta, debes especificar un precio mayor a 0.');
+        }
+        // --- FIN DE LA VALIDACIÓN AÑADIDA ---
+
         const newPost = new Post({
-            userId: req.user._id, type, files: req.files.map(f => f.path), description, whatsapp: whatsapp || req.user.whatsapp, category,
+            userId: req.user._id, 
+            type, 
+            files: req.files.map(f => f.path), 
+            description, 
+            whatsapp: whatsapp || req.user.whatsapp, 
+            category,
             tags: tags ? tags.split(',').map(t => t.trim()) : [],
             price: type === 'video' && !(isSubscriberOnly === 'on') ? parseFloat(price) : 0,
             services: type === 'image' && services ? services.split(',').map(s => s.trim()) : [],
-            rate: type === 'image' ? rate : '', address: type === 'image' ? address : '',
+            rate: type === 'image' ? rate : '', 
+            address: type === 'image' ? address : '',
             isSubscriberOnly: isSubscriberOnly === 'on'
         });
+
         await newPost.save();
         res.redirect(`/anuncio/${newPost._id}`);
-    } catch (err) { next(err); }
+    } catch (err) { 
+        next(err); 
+    }
 });
 
 app.get('/anuncio/:id', async (req, res, next) => {
@@ -1262,6 +1311,16 @@ app.post('/post/:id/like', requireAuth, async (req, res, next) => {
             await User.findByIdAndUpdate(currentUser._id, { $addToSet: { likedPosts: post._id } });
             await Post.findByIdAndUpdate(post._id, { $addToSet: { likes: currentUser._id } });
         }
+
+        if (!isLiked && !post.userId.equals(currentUser._id)) {
+    await new Notification({
+        userId: post.userId,
+        actorId: currentUser._id,
+        type: 'like',
+        postId: post._id,
+        message: 'le ha dado me gusta a tu publicación.'
+    }).save();
+}
         
         const updatedPost = await Post.findById(req.params.id); // Volver a leer para el conteo actualizado
 
@@ -1326,6 +1385,26 @@ app.post('/post/:id/comments', requireAuth, async (req, res) => {
             if (!post.userId.equals(commenter._id)) {
                 await new Notification({ userId: post.userId, actorId: commenter._id, type: 'comment', postId: post._id, message: `comentó tu post.` }).save({ session });
             }
+
+            // Lógica para notificar a usuarios mencionados
+const mentions = text.match(/@(\w+)/g);
+if (mentions) {
+    const mentionedUsernames = mentions.map(m => m.substring(1).toLowerCase());
+    const mentionedUsers = await User.find({ username: { $in: mentionedUsernames } }).session(session);
+    
+    for (const mentionedUser of mentionedUsers) {
+        // Evitar notificar al dueño del post dos veces o a uno mismo
+        if (!mentionedUser._id.equals(post.userId) && !mentionedUser._id.equals(commenter._id)) {
+            await new Notification({
+                userId: mentionedUser._id,
+                actorId: commenter._id,
+                type: 'comment',
+                postId: post._id,
+                message: `te ha mencionado en un comentario.`
+            }).save({ session });
+        }
+    }
+}
 
             // Populamos el comentario para devolverlo al frontend
             await post.populate({ path: 'comments.userId', select: 'username profilePic' });
@@ -1974,6 +2053,15 @@ app.post('/chat/:conversationId/messages', requireAuth, upload.single('chatMedia
             // Creación y guardado del nuevo mensaje en la base de datos
             const newMessage = new Message(newMessageData);
             await newMessage.save({ session });
+            await newMessage.save({ session });
+
+// Notificar al receptor que tiene un nuevo mensaje
+await new Notification({
+    userId: receiver._id,
+    actorId: sender._id,
+    type: 'message',
+    message: `te ha enviado un nuevo mensaje.`
+}).save({ session });
             
             // Actualización de la conversación con el último mensaje
             conversation.lastMessage = newMessage._id;
@@ -2051,27 +2139,76 @@ app.get('/chat/:conversationId/messages/since/:lastMessageId', requireAuth, asyn
 
 // RUTAS DEL PANEL DE CONFIGURACIÓN DEL CREADOR
 // =============================================
+// En server.js, reemplaza esta función completa
 app.get('/settings/:page', requireAuth, async (req, res, next) => {
     try {
-        app.set('layout', 'settings/layout'); // Usar el layout del panel de configuración
+        // Corrección: Eliminamos app.set('layout', ...) para evitar conflictos
         const { page } = req.params;
-        const validPages = ['dashboard', 'profile', 'subscriptions', 'automations', 'payouts'];
+        const validPages = ['dashboard', 'profile', 'subscriptions', 'automations', 'payouts', 'security'];
         if (!validPages.includes(page)) return res.redirect('/settings/dashboard');
 
-        let data = { page };
+        let data = { page, siteConfig: res.locals.siteConfig, path: req.path }; 
 
         if (page === 'dashboard') {
-            const transactions = await Transaction.find({ sellerId: req.user._id }).populate('buyerId', 'username').sort({ createdAt: -1 });
-            const totalNetEarnings = transactions.reduce((sum, t) => sum + (t.netEarning || 0), 0);
+            // 1. Obtener todas las transacciones del usuario
+            const transactions = await Transaction.find({ sellerId: req.user._id })
+                .populate('buyerId', 'username')
+                .sort({ createdAt: -1 });
+
+            // 2. Calcular desglose de ganancias por tipo
+            const earningsBreakdown = await Transaction.aggregate([
+                { $match: { sellerId: req.user._id, type: { $in: ['video_purchase', 'subscription', 'donation', 'chat_tip'] } } },
+                {
+                    $group: {
+                        _id: '$type',
+                        total: { $sum: '$netEarning' }
+                    }
+                }
+            ]);
+
+            // Objeto para almacenar las ganancias desglosadas
+            const earnings = {
+                videoSales: 0,
+                subscriptions: 0,
+                tipsAndDonations: 0
+            };
+
+            earningsBreakdown.forEach(item => {
+                if (item._id === 'video_purchase') earnings.videoSales = item.total;
+                if (item._id === 'subscription') earnings.subscriptions = item.total;
+                if (item._id === 'donation' || item._id === 'chat_tip') {
+                    earnings.tipsAndDonations += item.total;
+                }
+            });
+
+            // 3. Calcular visitas totales
+            const userPosts = await Post.find({ userId: req.user._id });
+            const totalViews = userPosts.reduce((sum, post) => sum + (post.views || 0), 0);
+
+            // 4. Contar suscriptores activos
             const activeSubscribers = req.user.subscribers.filter(s => new Date(s.endDate) > new Date()).length;
-            data = { ...data, totalNetEarnings, transactions, activeSubscribersCount: activeSubscribers };
+            
+            // 5. Pasar todos los datos a la vista
+            data = { 
+                ...data, 
+                transactions, 
+                activeSubscribersCount: activeSubscribers,
+                totalViews,
+                earnings
+            };
         }
+        
         if (page === 'payouts') {
             data.withdrawals = await Withdrawal.find({ userId: req.user._id }).sort({ createdAt: -1 });
         }
+        
         res.render(`settings/${page}`, data);
-    } catch(err) { next(err); }
+
+    } catch(err) { 
+        next(err); 
+    }
 });
+
 
 app.post('/settings/profile', requireAuth, upload.single('profilePic'), async (req, res, next) => {
     try {

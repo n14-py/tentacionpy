@@ -20,52 +20,52 @@
         <div class="profile-info">
             <div class="profile-title">
                 <h1 style="display: inline-flex; align-items: center; gap: 8px;">
-    <%= userProfile.username %>
-    <% if (userProfile.isVerified) { %>
-        <i class="fas fa-check-circle verification-badge" title="Cuenta Verificada"></i>
-    <% } %>
-</h1>
+                    <%= userProfile.username %>
+                    <% if (userProfile.isVerified) { %>
+                        <i class="fas fa-check-circle verification-badge" title="Cuenta Verificada"></i>
+                    <% } %>
+                </h1>
                 
                 <div class="profile-actions">
-    <% if (currentUser) { %>
-        <% if (!currentUser._id.equals(userProfile._id)) { %>
-            <% const isFollowing = currentUser.following && currentUser.following.some(id => id.equals(userProfile._id)); %>
-            <form action="/user/<%= userProfile._id %>/follow" method="POST" style="display: contents;">
-                <button type="submit" class="btn <%= isFollowing ? 'btn-secondary' : 'btn-primary' %>">
-                    <%= isFollowing ? 'Siguiendo' : 'Seguir' %>
-                </button>
-            </form>
+                    <% if (currentUser) { %>
+                        <% if (!currentUser._id.equals(userProfile._id)) { %>
+                            <% const isFollowing = currentUser.following && currentUser.following.some(id => id.equals(userProfile._id)); %>
+                            <form action="/user/<%= userProfile._id %>/follow" method="POST" style="display: contents;">
+                                <button type="submit" class="btn <%= isFollowing ? 'btn-secondary' : 'btn-primary' %>">
+                                    <%= isFollowing ? 'Siguiendo' : 'Seguir' %>
+                                </button>
+                            </form>
 
-            <% if (isSubscribed) { %>
-                <a href="/chat/with/<%= userProfile._id %>" class="btn btn-secondary">Enviar Mensaje</a>
-            <% } else if (userProfile.subscriptionSettings && userProfile.subscriptionSettings.isActive) { %>
-                <button class="btn btn-primary btn-subscribe" data-creator-id="<%= userProfile._id %>" data-price="<%= userProfile.subscriptionSettings.price %>" data-creator-name="<%= userProfile.username %>">
-                    Suscribirse por <%= userProfile.subscriptionSettings.price %><img src="/img/tpy-coin.png" class="tpy-coin" alt="TPYS">
-                </button>
-            <% } %>
+                            <% if (isSubscribed) { %>
+                                <a href="/chat/with/<%= userProfile._id %>" class="btn btn-secondary">Enviar Mensaje</a>
+                            <% } else if (userProfile.subscriptionSettings && userProfile.subscriptionSettings.isActive) { %>
+                                <button class="btn btn-primary btn-subscribe" data-creator-id="<%= userProfile._id %>" data-price="<%= userProfile.subscriptionSettings.price %>" data-creator-name="<%= userProfile.username %>">
+                                    Suscribirse por <%= userProfile.subscriptionSettings.price %><img src="/img/tpy-coin.png" class="tpy-coin" alt="TPYS">
+                                </button>
+                            <% } %>
 
-            <div class="profile-options-menu">
-                <button id="options-menu-btn" class="icon-btn"><i class="fas fa-ellipsis-v"></i></button>
-                <div id="options-dropdown" class="options-dropdown">
-                    <a href="#" id="block-user-btn" data-user-id="<%= userProfile._id %>">
-                        <i class="fas fa-user-slash"></i> Bloquear Usuario
-                    </a>
-                    <a href="/report?type=user&id=<%= userProfile._id %>">
-                        <i class="fas fa-flag"></i> Reportar Usuario
-                    </a>
+                            <div class="profile-options-menu">
+                                <button id="options-menu-btn" class="icon-btn"><i class="fas fa-ellipsis-v"></i></button>
+                                <div id="options-dropdown" class="options-dropdown">
+                                    <a href="#" id="block-user-btn" data-user-id="<%= userProfile._id %>">
+                                        <i class="fas fa-user-slash"></i> Bloquear Usuario
+                                    </a>
+                                    <a href="/report?type=user&id=<%= userProfile._id %>">
+                                        <i class="fas fa-flag"></i> Reportar Usuario
+                                    </a>
+                                </div>
+                            </div>
+                        <% } %>
+                    <% } else { %>
+                        <a href="/login" class="btn btn-primary">Seguir</a>
+                        <% if (userProfile.subscriptionSettings && userProfile.subscriptionSettings.isActive) { %>
+                            <a href="/login" class="btn btn-primary">
+                                Suscribirse por <%= userProfile.subscriptionSettings.price %><img src="/img/tpy-coin.png" class="tpy-coin" alt="TPYS">
+                            </a>
+                        <% } %>
+                         <a href="/login" class="btn btn-secondary">Enviar Mensaje</a>
+                    <% } %>
                 </div>
-            </div>
-        <% } %>
-    <% } else { %>
-        <a href="/login" class="btn btn-primary">Seguir</a>
-        <% if (userProfile.subscriptionSettings && userProfile.subscriptionSettings.isActive) { %>
-            <a href="/login" class="btn btn-primary">
-                Suscribirse por <%= userProfile.subscriptionSettings.price %><img src="/img/tpy-coin.png" class="tpy-coin" alt="TPYS">
-            </a>
-        <% } %>
-         <a href="/login" class="btn btn-secondary">Enviar Mensaje</a>
-    <% } %>
-</div>
             </div>
 
             <div class="profile-stats">
@@ -87,44 +87,22 @@
         <a href="#" class="tab-link active"><i class="fas fa-th"></i> PUBLICACIONES</a>
     </div>
 
+    <%# --- INICIO DEL CÓDIGO CORREGIDO --- %>
     <div class="post-grid">
-         <% posts.forEach(post => { %>
-            <div class="post-card">
-     <% if (currentUser && !currentUser._id.equals(userProfile._id)) { %>
-    <a href="/report?type=post&id=<%= post._id %>" class="report-post-icon" title="Reportar publicación">
-        <i class="fas fa-flag"></i>
-    </a>
-    <% } %>
-    <a href="/anuncio/<%= post._id %>" class="post-card-link">
-        <% if (post.files && post.files.length > 0) { %>
-            <img src="<%= post.files[0] %>" alt="Post de <%= userProfile.username %>" class="post-card-image">
-        <% } %>
-        <% if (post.isSubscriberOnly || (post.type === 'video' && post.price > 0)) { %>
-            <div class="content-lock-icon"><i class="fas fa-lock"></i></div>
-        <% } %>
-        <% if (post.type === 'video') { %>
-            <div class="video-overlay"><i class="fas fa-play"></i></div>
-        <% } %>
-    </a>
-    <div class="post-card-info">
-        <div class="post-card-stats solo">
-            <span><i class="fas fa-heart"></i> <%= post.likes ? post.likes.length : 0 %></span>
-            <span><i class="fas fa-eye"></i> <%= post.views || 0 %></span>
-            <span><i class="fas fa-comments"></i> <%= post.comments ? post.comments.length : 0 %></span>
-        </div>
-    </div>
-</div>
-
-<%- include('partials/post-card.html', { post: post }) %>
-        <% }); %>
-
-        <% if (!posts || posts.length === 0) { %>
+        <% if (posts && posts.length > 0) { %>
+            <% posts.forEach(post => { %>
+                <%# Esta es la única línea necesaria para mostrar cada post, ya no hay duplicados %>
+                <%- include('partials/post-card.html', { post: post }) %>
+            <% }); %>
+        <% } else { %>
             <div class="no-results-card">
                 <h3>Este usuario aún no ha publicado nada</h3>
                 <p>¡Vuelve más tarde para ver su contenido!</p>
             </div>
         <% } %>
     </div>
+    <%# --- FIN DEL CÓDIGO CORREGIDO --- %>
+
 </main>
 <% } else { %>
     <main class="container">
@@ -144,14 +122,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const optionsDropdown = document.getElementById('options-dropdown');
     const blockBtn = document.getElementById('block-user-btn');
 
-    if (optionsBtn && optionsDropdown) { // Añadida verificación para evitar errores
+    if (optionsBtn && optionsDropdown) {
         optionsBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             optionsDropdown.classList.toggle('active');
         });
     }
 
-    // Cierra el menú si se hace clic fuera de él
     document.addEventListener('click', (e) => {
         if (optionsDropdown && optionsBtn && !optionsDropdown.contains(e.target) && !optionsBtn.contains(e.target)) {
             optionsDropdown.classList.remove('active');
@@ -161,7 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (blockBtn) {
         blockBtn.addEventListener('click', async (e) => {
             e.preventDefault();
-            const userId = blockBtn.dataset.userId; // Corregido para obtener el dataset del botón
+            const userId = blockBtn.dataset.userId;
 
             if (confirm('¿Estás seguro de que quieres bloquear a este usuario? No podrás ver su perfil ni publicaciones, y dejarán de seguirse mutuamente.')) {
                 try {

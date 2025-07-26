@@ -30,20 +30,35 @@
                 <p>Aquí tienes un resumen de tu actividad y ganancias en la plataforma.</p>
 
                 <div class="stats-grid">
-                    <div class="stat-card">
-                        <h4>Saldo Actual</h4>
+                    <div class="stat-card main-balance">
+                        <h4><i class="fas fa-wallet"></i> Saldo Actual</h4>
                         <p class="stat-value"><%= currentUser.tpysBalance.toLocaleString('es-PY') %><img src="/img/tpy-coin.png" class="tpy-coin" alt="TPYS"></p>
-                        <span class="stat-description" style="color: var(--success-color); font-weight: bold;">≈ <%= (currentUser.tpysBalance * 100).toLocaleString('es-PY', {style: 'currency', currency: 'PYG'}) %></span>
+                        <span class="stat-description">≈ <%= (currentUser.tpysBalance * 100).toLocaleString('es-PY', {style: 'currency', currency: 'PYG'}) %></span>
                     </div>
+
                     <div class="stat-card">
-                        <h4>Ganancias Totales (Neto)</h4>
-                        <p class="stat-value"><%= (locals.totalNetEarnings || 0).toLocaleString('es-PY') %><img src="/img/tpy-coin.png" class="tpy-coin" alt="TPYS"></p>
-                        <span class="stat-description">Total de TPYS recibidos después de comisiones.</span>
-                    </div>
-                    <div class="stat-card">
-                        <h4>Suscriptores Activos</h4>
+                        <h4><i class="fas fa-users"></i> Suscriptores Activos</h4>
                         <p class="stat-value"><%= locals.activeSubscribersCount || 0 %></p>
-                        <span class="stat-description">Usuarios actualmente suscritos a tu perfil.</span>
+                    </div>
+
+                    <div class="stat-card">
+                        <h4><i class="fas fa-eye"></i> Visitas en Anuncios</h4>
+                        <p class="stat-value"><%= locals.totalViews ? totalViews.toLocaleString('es-PY') : 0 %></p>
+                    </div>
+
+                    <div class="stat-card">
+                        <h4><i class="fas fa-video"></i> Ganancias por Ventas</h4>
+                        <p class="stat-value income"><%= (locals.earnings ? earnings.videoSales : 0).toLocaleString('es-PY') %><img src="/img/tpy-coin.png" class="tpy-coin" alt="TPYS"></p>
+                    </div>
+
+                    <div class="stat-card">
+                        <h4><i class="fas fa-star"></i> Ganancias por Suscripciones</h4>
+                        <p class="stat-value income"><%= (locals.earnings ? earnings.subscriptions : 0).toLocaleString('es-PY') %><img src="/img/tpy-coin.png" class="tpy-coin" alt="TPYS"></p>
+                    </div>
+
+                    <div class="stat-card">
+                        <h4><i class="fas fa-hand-holding-usd"></i> Ganancias por Propinas</h4>
+                        <p class="stat-value income"><%= (locals.earnings ? earnings.tipsAndDonations : 0).toLocaleString('es-PY') %><img src="/img/tpy-coin.png" class="tpy-coin" alt="TPYS"></p>
                     </div>
                 </div>
 
@@ -89,6 +104,48 @@
         </section>
     </div>
 </main>
+
+<style>
+    /* Estilos adicionales para el nuevo dashboard */
+    .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); /* Más flexible */
+    }
+    .stat-card {
+        background-color: var(--surface-light-color);
+        padding: 1.5rem;
+        border-radius: var(--border-radius-soft);
+        border-bottom: 3px solid var(--border-color);
+    }
+    .stat-card.main-balance {
+        background-color: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color-dark);
+    }
+    .stat-card.main-balance .stat-value { color: white; }
+    .stat-card.main-balance .stat-description { color: rgba(255,255,255,0.8); }
+    .stat-card h4 {
+        font-size: 0.9rem;
+        color: var(--text-muted-color);
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .main-balance h4 { color: rgba(255,255,255,0.9); }
+    .stat-card .stat-value {
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: var(--text-color);
+        line-height: 1.2;
+    }
+    .stat-card .stat-value.income {
+        color: var(--success-color);
+    }
+    .stat-card .stat-description {
+        font-size: 0.85rem;
+        color: var(--text-muted-color);
+    }
+</style>
 
 <%- include('../partials/footer.html') %>
 

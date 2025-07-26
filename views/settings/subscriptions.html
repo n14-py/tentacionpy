@@ -39,25 +39,42 @@
                         <label for="isActive"><strong>Activar Suscripciones en mi Perfil</strong></label>
                         <small class="form-text text-muted">Al marcar esta casilla, aparecerá un botón de "Suscribirse" en tu perfil.</small>
                     </div>
-                    <hr>
+                    
                     <div id="settings-if-active">
-                        <h4>Precio de la Suscripción Mensual</h4>
-                        <p>Elige cuánto costará la suscripción a tu perfil. Recibirás el 55% de este monto por cada suscriptor.</p>
-                        <div class="form-group">
-                            <label for="price">Precio (en <img src="/img/tpy-coin.png" class="tpy-coin" alt="TPYS">)</label>
-                            <select id="price" name="price" class="form-control">
-                                <% 
-                                    const prices = [300, 600, 1000, 1250];
-                                    const currentPrice = locals.currentUser && locals.currentUser.subscriptionSettings ? currentUser.subscriptionSettings.price : 300;
-                                %>
-                                <% prices.forEach(p => { %>
-                                    <option value="<%= p %>" <%= currentPrice === p ? 'selected' : '' %>>
-                                        <%= p.toLocaleString('es-PY') %> TPYS al mes
-                                    </option>
-                                <% }); %>
-                            </select>
-                        </div>
+                        <hr>
+                        <h4>Elige un precio para tu suscripción mensual:</h4>
+                        <p>Recibirás el <strong><%= (siteConfig.creatorEarningRate * 100) %>%</strong> de este monto por cada suscriptor.</p>
+                        
+                        <% 
+                        const prices = [300, 600, 1000, 1250]; 
+                        const creatorRate = siteConfig.creatorEarningRate;
+                        const tpysToGsRate = 100; // 1 TPYS = 100 Gs.
+                        const currentPrice = locals.currentUser && locals.currentUser.subscriptionSettings ? currentUser.subscriptionSettings.price : 300;
+                        %>
+
+                        <% prices.forEach(priceValue => { 
+                            const netEarningGs = (priceValue * creatorRate) * tpysToGsRate;
+                            const projection1000 = netEarningGs * 1000;
+                        %>
+                            <div class="radio-option-detailed">
+                                <input type="radio" id="price_<%= priceValue %>" name="price" value="<%= priceValue %>" <%= currentPrice === priceValue ? 'checked' : '' %>>
+                                <label for="price_<%= priceValue %>" class="main-label">
+                                    <div class="price-display">
+                                        <strong><%= priceValue %> TPYS / mes</strong>
+                                    </div>
+                                    <div class="earnings-info-static">
+                                        <span class="earning-line">
+                                            <i class="fas fa-money-bill-wave"></i> Recibirás <strong><%= netEarningGs.toLocaleString('es-PY', {style:'currency', currency:'PYG'}) %></strong> por suscriptor.
+                                        </span>
+                                        <span class="projection-line">
+                                            <i class="fas fa-chart-line"></i> Con 1000 fans, ganarías <strong><%= projection1000.toLocaleString('es-PY', {style:'currency', currency:'PYG'}) %></strong> al mes.
+                                        </span>
+                                    </div>
+                                </label>
+                            </div>
+                        <% }) %>
                     </div>
+                    
                     <hr>
                     <div class="form-group">
                         <button type="submit" class="btn btn-primary btn-block">Guardar Configuración</button>
@@ -69,6 +86,18 @@
 </main>
 
 <%- include('../partials/footer.html') %>
+
+<style>
+    .radio-option-detailed { position: relative; margin-bottom: 1rem; }
+    .radio-option-detailed input[type="radio"] { position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer; z-index: 1; }
+    .radio-option-detailed .main-label { display: block; padding: 1rem 1.5rem; border: 2px solid var(--border-color); border-radius: var(--border-radius-soft); transition: all 0.2s ease; background-color: var(--surface-light-color); }
+    .radio-option-detailed input[type="radio"]:hover + .main-label { border-color: #666; }
+    .radio-option-detailed input[type="radio"]:checked + .main-label { border-color: var(--primary-color); box-shadow: 0 0 10px rgba(233, 30, 99, 0.3); background-color: #2a2a2a; }
+    .price-display { font-size: 1.2rem; color: var(--text-color); }
+    .earnings-info-static { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 0.5rem; }
+    .earning-line { color: var(--success-color); font-size: 0.9rem; }
+    .projection-line { color: var(--primary-color); font-size: 0.9rem; }
+</style>
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
